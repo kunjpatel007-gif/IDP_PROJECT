@@ -15,3 +15,12 @@ __pycache__/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# AI and Local Backup Files
+AGENT_REPORT.md
+KUNJUPLOADED/
+sketch_before.ino
+*.pristine
+smart_adapter_cloud_connectivity_brief.md
+FRONTEND_HANDOFF.md
+
