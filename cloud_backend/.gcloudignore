@@ -1,0 +1,15 @@
+.gcloudignore
+.git/
+.gitignore
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+tests/
+requirements-dev.txt
+README.md
+*.txt.local
+secret*.txt

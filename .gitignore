@@ -1,0 +1,17 @@
+# Secrets (NEVER commit)
+secrets.h
+secret*.txt
+
+# Build artifacts
+arduino-cli-bin/
+arduino-cli.zip
+*.pristine
+
+# Python
+cloud_backend/.venv/
+cloud_backend/venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
