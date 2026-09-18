@@ -54,3 +54,36 @@ python -m venv .venv
 pip install -r requirements-dev.txt
 pytest -v
 ```
+
+## Payload Schema
+`json
+{
+  "device_id": "socket1",
+  "device_name": "Living Room Socket",
+  "fw_version": "0.2.0-cloud",
+  "rssi": -65,
+  "seq": 142,
+  "free_heap": 214000,
+  "voltage": 120.5,
+  "current": 2.1,
+  "power": 253.05,
+  "energy": 12.4,
+  "frequency": 60.0,
+  "power_factor": 0.95,
+  "threshold": 1500.0,
+  "tripped": false,
+  "relay_on": true
+}
+``n
+## Firmware Status-Code Policy
+| Code | Meaning | Firmware Behavior |
+|---|---|---|
+| 200 | OK | Reset backoff to 5s. Increment seq. |
+| 400 | Bad Request (schema/types) | Freeze pushes for 60s (requires code fix). |
+| 401 | Missing/bad X-Device-Key | Freeze pushes for 60s (requires secrets.h fix). |
+| 403 | device_id not in allowlist | Freeze pushes for 60s. |
+| 413 | Payload too large | Freeze pushes for 60s. |
+| 415 | Unsupported Media Type | Freeze pushes for 60s. |
+| 429 | Too Many Requests (rate limit) | Accept gracefully. Reset backoff to 5s. |
+| 500 | Server Error | Exponential backoff up to 60s. |
+| 503 | Firestore overload | Exponential backoff up to 60s. |
