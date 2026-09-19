@@ -17,10 +17,11 @@ __pycache__/
 htmlcov/
 
 # AI and Local Backup Files
-AGENT_REPORT.md
-KUNJUPLOADED/
-sketch_before.ino
-*.pristine
-smart_adapter_cloud_connectivity_brief.md
-FRONTEND_HANDOFF.md
+docs/AI_Prompts_And_Reports/
+docs/KUNJ_ORIGINALS/
+backups/
+tools/arduino-cli-bin/
+tools/arduino-cli.zip
+.env
 
+tools/test_mcp.py
