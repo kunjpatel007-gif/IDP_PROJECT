@@ -40,9 +40,6 @@ export default function Sidebar({ connection = 'connecting', alertCount = 0, fwV
               <p className="font-display text-[15px] font-semibold tracking-tight text-on-surface">
                 SmartAdapter
               </p>
-              <p className="mt-1 font-mono text-[10px] tracking-[0.05em] text-on-surface-subtle">
-                Telemetry console
-              </p>
             </div>
           </div>
 
@@ -86,28 +83,11 @@ export default function Sidebar({ connection = 'connecting', alertCount = 0, fwV
         </div>
 
         <div className="border-t border-border-subtle px-5 py-4">
-          <div className="mb-2.5 flex items-center justify-between">
-            <span className="font-mono text-[10px] uppercase tracking-[0.05em] text-on-surface-subtle">
-              Cloud link
-            </span>
-            <span className={`text-[12px] font-medium ${link.tone}`}>{link.label}</span>
-          </div>
-
           <div className="flex items-center justify-between rounded border border-border-subtle bg-surface-subtle px-2.5 py-2 shadow-well">
             <LinkTrace alive={alive} colour={alive ? '#22c55e' : '#f87171'} />
             <StatusOrb status={link.status} size={7} />
           </div>
 
-          <dl className="mt-3 space-y-1 font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle">
-            <div className="flex justify-between">
-              <dt>Node</dt>
-              <dd className="text-on-surface-muted">{deviceId ?? 'socket1'}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt>Firmware</dt>
-              <dd className="text-on-surface-muted">{fwVersion ?? '—'}</dd>
-            </div>
-          </dl>
         </div>
       </aside>
 

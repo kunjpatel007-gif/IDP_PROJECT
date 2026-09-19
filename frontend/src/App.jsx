@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 
 import BootSequence from '@/components/BootSequence';
+import ScrambleText from '@/components/ScrambleText';
 import CommandPipeline from '@/components/CommandPipeline';
 import DeviceCard from '@/components/DeviceCard';
 import ElectricField from '@/components/ElectricField';
@@ -91,6 +92,8 @@ export default function App() {
       <TripOverlay
         tripped={device.tripped}
         peakWatts={device.peakTripWatts ?? device.power}
+        voltage={device.faultVoltage ?? device.voltage ?? 230}
+        powerFactor={device.faultPowerFactor ?? device.powerFactor ?? 0.95}
         threshold={device.threshold}
         onShake={handleShake}
       />
@@ -108,9 +111,13 @@ export default function App() {
         <main className="mx-auto max-w-[1180px] px-4 py-6 sm:px-6 lg:px-10 lg:py-9">
           {/* ── Header ─────────────────────────────────────────────── */}
           <header className="mb-7">
-            <h1 className="font-display text-[26px] font-bold uppercase tracking-[0.1em] text-on-surface lg:text-[30px]">
-              Dashboard
-            </h1>
+            <ScrambleText
+              as="h1"
+              text="DASHBOARD"
+              duration={760}
+              delay={120}
+              className="block font-display text-[26px] font-bold uppercase tracking-[0.1em] text-on-surface lg:text-[30px]"
+            />
           </header>
 
           {/* ── Link fault banner ──────────────────────────────────── */}

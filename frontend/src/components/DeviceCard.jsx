@@ -8,6 +8,7 @@ import PowerFlowRibbon from '@/components/PowerFlowRibbon';
 import PowerMeter from '@/components/PowerMeter';
 import SparklineChart from '@/components/SparklineChart';
 import StatusOrb from '@/components/StatusOrb';
+import TripCurve from '@/components/TripCurve';
 import WaveformBar from '@/components/WaveformBar';
 import { IconChevron } from '@/components/Icons';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -354,7 +355,7 @@ export default function DeviceCard({
         variants={strip}
         initial="hidden"
         animate={booted ? 'show' : 'hidden'}
-        className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]"
+        className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)_minmax(0,1fr)]"
       >
         <ACScope
           voltage={voltage ?? 0}
@@ -370,6 +371,13 @@ export default function DeviceCard({
           powerFactor={powerFactor ?? 1}
           energised={!unreachable}
           tripped={tripped}
+        />
+        <TripCurve
+          current={current ?? 0}
+          threshold={threshold}
+          voltage={voltage ?? 230}
+          powerFactor={powerFactor ?? 0.95}
+          energised={!unreachable}
         />
       </motion.div>
 

@@ -1,117 +1,162 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import ArcDischarge from '@/components/ArcDischarge';
+import FaultRecord from '@/components/FaultRecord';
+import ScrambleText from '@/components/ScrambleText';
 import { usePrevious } from '@/hooks/usePrevious';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { fmt } from '@/lib/format';
 
 /**
- * The money moment.
+ * Breaker operation, staged as a relay event rather than an alert box.
  *
- * Fires strictly on the false → true edge of `tripped`, never on a page load
- * that happens to find the breaker already open — the event is the transition,
- * not the state. Holds for 1.5s: strobe, chassis shake, verdict, then clears
- * to the normal tripped card so the console is readable again.
+ *   collapse   0–200ms    supply sags, the console folds to a scan line
+ *   arc        200–700ms  dielectric breakdown across the field
+ *   report     700ms+     the oscillographic event report resolves in
+ *   clear      ~4.4s      shutter wipe back to the console
+ *
+ * Fires strictly on the false → true edge of `tripped`, never on a load that
+ * happens to find the breaker already open — the event is the transition.
+ *
+ * There is no emoji and no exclamation mark. A protection device that has
+ * just interrupted a fault reports what it measured; the drama comes from the
+ * measurement arriving, not from punctuation.
  */
 
-const HOLD_MS = 1500;
+const PHASES = { collapse: 200, arc: 500, hold: 3700 };
+const TOTAL = PHASES.collapse + PHASES.arc + PHASES.hold;
 
-export default function TripOverlay({ tripped, peakWatts, threshold, onShake }) {
+export default function TripOverlay({
+  tripped,
+  peakWatts,
+  threshold,
+  voltage,
+  powerFactor,
+  onShake,
+}) {
   const reduced = useReducedMotion();
   const previous = usePrevious(tripped);
-  const [active, setActive] = useState(false);
-  const dismiss = useRef(null);
+  const [phase, setPhase] = useState(null); // collapse | arc | report
+  const timers = useRef([]);
 
   useEffect(() => {
     if (previous !== false || tripped !== true) return;
-    setActive(true);
+
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+
+    setPhase('collapse');
     if (!reduced && typeof onShake === 'function') onShake();
-    // The timer lives in a ref: `previous` flips to true on the very next
-    // render, and an effect-scoped cleanup would cancel the dismissal before
-    // it ever fired, pinning the overlay over the console for good.
-    clearTimeout(dismiss.current);
-    dismiss.current = setTimeout(() => setActive(false), HOLD_MS);
+
+    // Timers live in a ref: `previous` flips true on the next render, and an
+    // effect-scoped cleanup would cancel the sequence before it ever ran.
+    timers.current.push(setTimeout(() => setPhase('arc'), PHASES.collapse));
+    timers.current.push(setTimeout(() => setPhase('report'), PHASES.collapse + PHASES.arc));
+    timers.current.push(setTimeout(() => setPhase(null), reduced ? 2200 : TOTAL));
   }, [tripped, previous, onShake, reduced]);
 
-  useEffect(() => () => clearTimeout(dismiss.current), []);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   const overshoot =
     peakWatts != null && threshold ? Math.round((peakWatts / threshold) * 100) : null;
 
   return (
     <AnimatePresence>
-      {active ? (
+      {phase ? (
         <motion.div
           key="trip"
           role="alert"
           aria-live="assertive"
-          className="pointer-events-none fixed inset-0 z-[90] flex items-center justify-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          className="pointer-events-none fixed inset-0 z-[90] flex items-center justify-center overflow-hidden px-4"
+          initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: reduced ? 0 : 0.42, ease: 'easeOut' }}
+          transition={{ duration: 0.45, ease: 'easeInOut' }}
         >
-          {/* Dielectric breakdown across the whole console */}
-          <ArcDischarge active intensity={1} />
+          {/* Field collapse: everything folds to a scan line, then reopens */}
+          <motion.div
+            className="absolute inset-0 origin-center bg-[#0a0406]"
+            initial={{ scaleY: 1 }}
+            animate={
+              reduced
+                ? { scaleY: 1, opacity: 0.94 }
+                : { scaleY: [1, 0.004, 1], opacity: [1, 1, 0.94] }
+            }
+            transition={{ duration: 0.42, times: [0, 0.35, 1], ease: 'easeInOut' }}
+          />
 
-          {/* Field flash */}
-          <div className="absolute inset-0 bg-[#2a0708]/85 backdrop-blur-[2px]" />
+          {/* The scan line itself, blown out white at the pinch */}
           {!reduced ? (
-            <div
-              className="trip-strobe absolute inset-0"
-              style={{
-                background:
-                  'radial-gradient(circle at 50% 45%, rgba(220,38,38,0.55) 0%, rgba(220,38,38,0.1) 45%, transparent 72%)',
-              }}
+            <motion.div
+              className="absolute inset-x-0 top-1/2 h-[2px] bg-white"
+              initial={{ opacity: 0, scaleX: 0.2 }}
+              animate={{ opacity: [0, 1, 0], scaleX: [0.2, 1, 1] }}
+              transition={{ duration: 0.4, times: [0, 0.35, 1] }}
             />
           ) : null}
 
-          {/* Rack rails snapping in from both edges */}
+          {phase === 'arc' ? <ArcDischarge active intensity={1} /> : null}
+
+          {/* Rack rails */}
           <motion.div
-            className="absolute left-0 right-0 top-0 h-[3px] origin-left bg-accent-red"
+            className="absolute inset-x-0 top-0 h-[2px] origin-left bg-accent-red"
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
-            transition={{ duration: reduced ? 0 : 0.34, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.4, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
           />
           <motion.div
-            className="absolute bottom-0 left-0 right-0 h-[3px] origin-right bg-accent-red"
+            className="absolute inset-x-0 bottom-0 h-[2px] origin-right bg-accent-red"
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
-            transition={{ duration: reduced ? 0 : 0.34, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.4, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
           />
 
+          <AnimatePresence>
+            {phase === 'report' ? (
+              <motion.div
+                key="report"
+                className="relative flex w-full max-w-[860px] flex-col items-stretch"
+                initial={reduced ? { opacity: 1 } : { opacity: 0, y: 18, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ type: 'spring', stiffness: 190, damping: 22 }}
+              >
+                {/* Verdict */}
+                <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+                  <ScrambleText
+                    as="h2"
+                    text="BREAKER OPEN"
+                    duration={560}
+                    className="font-display text-[30px] font-bold uppercase leading-none tracking-[0.16em] text-[#ffe9e9] sm:text-[42px]"
+                  />
+                  <div className="flex items-baseline gap-2 font-mono">
+                    <span className="text-[26px] font-medium text-accent-red sm:text-[32px]">
+                      {peakWatts != null ? fmt(peakWatts) : '—'}
+                    </span>
+                    <span className="text-[13px] text-on-surface-muted">W</span>
+                    {overshoot != null ? (
+                      <span className="ml-2 border border-accent-red/40 px-2 py-0.5 text-[12px] text-accent-red">
+                        {overshoot}% of rated
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+
+                <FaultRecord
+                  peakWatts={peakWatts}
+                  threshold={threshold}
+                  voltage={voltage}
+                  powerFactor={powerFactor}
+                />
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+
+          {/* Shutter wipe on the way out */}
           <motion.div
-            className="relative flex flex-col items-center px-6 text-center"
-            initial={reduced ? { opacity: 1 } : { scale: 0.86, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 18 }}
-          >
-            <motion.span
-              className="mb-3 text-[42px] leading-none"
-              animate={reduced ? {} : { scale: [1, 1.18, 1] }}
-              transition={{ duration: 0.5, repeat: 2, ease: 'easeInOut' }}
-              aria-hidden="true"
-            >
-              ⚡
-            </motion.span>
-
-            <h2 className="font-display text-[34px] font-bold uppercase leading-none tracking-[0.14em] text-[#ffe4e4] sm:text-[46px]">
-              Circuit Tripped
-            </h2>
-
-            <div className="mt-4 border border-accent-red/45 bg-black/35 px-4 py-2">
-              <p className="font-mono text-[13px] tracking-[0.02em] text-accent-red">
-                {peakWatts != null && threshold
-                  ? `${fmt(peakWatts)} W drawn against a ${fmt(threshold)} W limit`
-                  : 'Load exceeded the configured limit'}
-              </p>
-              {overshoot != null ? (
-                <p className="mt-1 font-mono text-[11px] tracking-[0.05em] text-[#ffb4ab]/80">
-                  {overshoot}% of rated — relay opened, socket de-energised
-                </p>
-              ) : null}
-            </div>
-          </motion.div>
+            className="absolute inset-x-0 bottom-0 origin-bottom bg-[#0a0406]"
+            initial={{ height: 0 }}
+            exit={{ height: '100%' }}
+            transition={{ duration: 0.4, ease: [0.76, 0, 0.24, 1] }}
+          />
         </motion.div>
       ) : null}
     </AnimatePresence>

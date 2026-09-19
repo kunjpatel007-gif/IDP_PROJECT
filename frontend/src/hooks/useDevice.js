@@ -22,7 +22,10 @@ export function useDevice() {
   const seenFirst = useRef(false);
   // Last few readings while energised — the source of the peak trip load.
   const recentPower = useRef([]);
+  // Power factor and voltage while the socket is actually carrying load.
+  const lastEnergised = useRef({ voltage: 230, powerFactor: 0.95 });
   const [tripPeak, setTripPeak] = useState(null);
+  const [tripContext, setTripContext] = useState(null);
 
   // ── Live subscription ───────────────────────────────────────────
   useEffect(() => {
@@ -40,9 +43,20 @@ export function useDevice() {
         const watts = Number(data.power ?? 0);
         if (data.tripped === true) {
           setTripPeak((prev) => prev ?? Math.max(watts, ...recentPower.current, 0));
+          // Freeze the conditions at inception too. An open relay reports a
+          // meaningless power factor (~0.5 with no load), and reconstructing
+          // the fault from that puts the pickup current out by a factor of two.
+          setTripContext((prev) => prev ?? { ...lastEnergised.current });
         } else {
           setTripPeak(null);
+          setTripContext(null);
           recentPower.current = [...recentPower.current, watts].slice(-3);
+          if (watts > 40) {
+            lastEnergised.current = {
+              voltage: Number(data.voltage) || 230,
+              powerFactor: Number(data.power_factor) || 0.95,
+            };
+          }
         }
 
         seenFirst.current = true;
@@ -118,6 +132,8 @@ export function useDevice() {
       power,
       displayPower,
       peakTripWatts,
+      faultVoltage: tripContext?.voltage ?? null,
+      faultPowerFactor: tripContext?.powerFactor ?? null,
       voltage: unreachable ? null : (raw?.voltage ?? null),
       current: unreachable ? null : (raw?.current ?? null),
       energy: raw?.energy ?? null,
@@ -137,7 +153,7 @@ export function useDevice() {
       silentFor,
       isStale,
     };
-  }, [raw, now, tripPeak]);
+  }, [raw, now, tripPeak, tripContext]);
 
   return {
     ...device,
