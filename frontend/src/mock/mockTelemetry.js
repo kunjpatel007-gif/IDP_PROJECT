@@ -64,10 +64,8 @@ export function startMockTelemetry(onData) {
     if (silent) return; // the device simply stops talking
 
     let power = tripped || !relayOn ? 0 : Math.max(0, targetFor() + jitter(14));
-    console.log(`[MOCK] emit: scenario=${scenario}, elapsed=${elapsed}, target=${targetFor()}, power=${power}, tripped=${tripped}`);
 
     if (!tripped && power > THRESHOLD) {
-      console.log(`[MOCK] TRIPPING NOW! power=${power} > THRESHOLD`);
       tripped = true;
       relayOn = false;
       // The recorded peak is the load that opened the breaker.

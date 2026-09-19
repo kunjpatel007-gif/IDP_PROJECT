@@ -1,6 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 
+import BootSequence from '@/components/BootSequence';
+import CommandPipeline from '@/components/CommandPipeline';
 import DeviceCard from '@/components/DeviceCard';
 import GridBackground from '@/components/GridBackground';
 import LiveDataBadge from '@/components/LiveDataBadge';
@@ -41,6 +43,7 @@ export default function App() {
   const { push } = useToast();
 
   const [commandInFlight, setCommandInFlight] = useState(false);
+  const [pipeline, setPipeline] = useState(null); // { run, command, expectRelay }
   const [shaking, setShaking] = useState(false);
   const shakeTimer = useRef(null);
 
@@ -60,6 +63,8 @@ export default function App() {
       setCommandInFlight(true);
       try {
         await sendCommand(command);
+        // Stage the round trip; the last hop closes on a real snapshot.
+        setPipeline({ run: Date.now(), command, expectRelay: command !== 'OFF' });
         const copy = COMMAND_COPY[command];
         push({ tone: 'ok', title: copy.title, detail: copy.detail });
       } catch (error) {
@@ -92,6 +97,8 @@ export default function App() {
         fwVersion={device.fwVersion}
         deviceId={device.deviceId}
       />
+
+      <BootSequence />
 
       <div className={`relative z-10 lg:pl-60 ${shaking ? 'chassis-shake' : ''}`}>
         <main className="mx-auto max-w-[1180px] px-4 py-6 sm:px-6 lg:px-10 lg:py-9">
@@ -147,6 +154,19 @@ export default function App() {
               </p>
             </div>
           ) : null}
+
+          <CommandPipeline
+            run={pipeline?.run}
+            command={pipeline?.command}
+            confirmed={
+              pipeline
+                ? pipeline.command === 'RESET'
+                  ? !device.tripped
+                  : device.relayOn === pipeline.expectRelay
+                : false
+            }
+            onDone={() => setPipeline(null)}
+          />
 
           <StatsRow device={device} powerHistory={powerHistory} />
 

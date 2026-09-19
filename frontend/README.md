@@ -147,6 +147,11 @@ src/
     SparklineChart.jsx      hand-rolled SVG rolling trace
     PowerFactorGauge.jsx    moving-needle meter
     TripOverlay.jsx         full-screen trip event
+    BootSequence.jsx        one-time power-on self test
+    ACScope.jsx             dual-trace mains oscilloscope, real phase lag
+    PhasorDiagram.jsx       rotating V/I phasors and the power triangle
+    PowerFlowRibbon.jsx     charge carriers flowing grid → relay → load
+    CommandPipeline.jsx     live command round-trip staging
     LinkTrace.jsx           50 Hz mains carrier for the cloud link
     ControlButton.jsx       relay/breaker actuator
     ToastNotification.jsx   toast context, provider, viewport
@@ -159,6 +164,26 @@ src/
 ```
 
 No charting library. Every trace, gauge and meter is hand-rolled SVG or canvas.
+
+### The instrument bay is real physics, not decoration
+
+`ACScope` and `PhasorDiagram` are reconstructed from the PZEM registers using the
+standard single-phase relations, so an examiner can check them:
+
+```
+φ = arccos(PF)          v(t) = V√2·sin(ωt)      i(t) = I√2·sin(ωt − φ)
+S = V·I                 P = S·cos φ             Q = S·sin φ        S = √(P² + Q²)
+```
+
+The current trace lags the voltage trace by the true power factor angle. Plug in a
+motor and the traces visibly separate and the power triangle grows a vertical leg; plug
+in a heater and they lock in phase and Q collapses. `P` computed this way agrees with the
+`power` field the PZEM reports independently — the triangle closes against the hardware.
+
+`CommandPipeline` stages the four hops a relay command actually takes, with their real
+budgets. The final hop does not run on a timer: it closes only when a snapshot arrives
+reporting the commanded relay state, so the tick is genuine hardware confirmation rather
+than an animation that always succeeds. If nothing returns inside the window, it says so.
 
 ---
 

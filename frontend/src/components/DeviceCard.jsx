@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import ACScope from '@/components/ACScope';
 import ControlButton from '@/components/ControlButton';
 import DetailsPanel from '@/components/DetailsPanel';
+import PhasorDiagram from '@/components/PhasorDiagram';
+import PowerFlowRibbon from '@/components/PowerFlowRibbon';
 import PowerMeter from '@/components/PowerMeter';
 import SparklineChart from '@/components/SparklineChart';
 import StatusOrb from '@/components/StatusOrb';
@@ -129,6 +132,8 @@ export default function DeviceCard({
     utilisationClamped,
     overloaded,
     relayOn,
+    powerFactor,
+    frequency,
   } = device;
 
   useEffect(() => {
@@ -270,6 +275,16 @@ export default function DeviceCard({
             />
           </motion.div>
 
+          {/* ── Energy flow through the relay ────────────────────── */}
+          <motion.div variants={strip}>
+            <PowerFlowRibbon
+              current={current ?? 0}
+              relayOn={relayOn}
+              tripped={tripped}
+              energised={!unreachable}
+            />
+          </motion.div>
+
           {/* ── Utilisation oscillograph ─────────────────────────── */}
           <motion.div variants={strip}>
             <div className="mb-2 flex items-baseline justify-between font-mono text-[12px]">
@@ -336,6 +351,29 @@ export default function DeviceCard({
           </motion.div>
         </div>
       </motion.article>
+
+      <motion.div
+        variants={strip}
+        initial="hidden"
+        animate={booted ? 'show' : 'hidden'}
+        className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]"
+      >
+        <ACScope
+          voltage={voltage ?? 0}
+          current={current ?? 0}
+          powerFactor={powerFactor ?? 1}
+          frequency={frequency}
+          energised={!unreachable}
+          tripped={tripped}
+        />
+        <PhasorDiagram
+          voltage={voltage ?? 0}
+          current={current ?? 0}
+          powerFactor={powerFactor ?? 1}
+          energised={!unreachable}
+          tripped={tripped}
+        />
+      </motion.div>
 
       <DetailsPanel open={detailsOpen} onClose={() => setDetailsOpen(false)} device={device} />
     </div>

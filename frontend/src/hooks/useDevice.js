@@ -38,7 +38,6 @@ export function useDevice() {
         // breaker is already gone by the time `tripped` arrives. Freeze the
         // highest of the last few energised readings and hold it until reset.
         const watts = Number(data.power ?? 0);
-        console.log(`[useDevice] Received data: tripped=${data.tripped}, power=${watts}`);
         if (data.tripped === true) {
           setTripPeak((prev) => prev ?? Math.max(watts, ...recentPower.current, 0));
         } else {
