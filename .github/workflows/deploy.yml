@@ -1,0 +1,41 @@
+name: Deploy Cloud Function
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'cloud_backend/**'
+      - '.github/workflows/deploy.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: 'projects/1068769473313/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+          service_account: 'github-actions-deployer@smart-adapter-backend.iam.gserviceaccount.com'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy Cloud Function
+        run: |
+          cd cloud_backend
+          gcloud functions deploy ingest \
+            --gen2 --runtime=python312 --region=us-central1 \
+            --source=. --entry-point=ingest \
+            --trigger-http --allow-unauthenticated \
+            --memory=256Mi --timeout=15s --max-instances=2 \
+            --set-secrets=DEVICE_SHARED_SECRET=device-shared-secret:latest \
+            --set-env-vars=ALLOWED_DEVICE_IDS=socket1,MIN_PUSH_INTERVAL_S=2
+
