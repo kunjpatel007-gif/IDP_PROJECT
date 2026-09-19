@@ -82,9 +82,6 @@ export default function PhasorDiagram({
         <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-on-surface-muted">
           Phasors
         </span>
-        <span className="font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle">
-          φ = arccos(PF)
-        </span>
       </div>
 
       <div className="flex flex-col items-center gap-1 p-2.5 sm:gap-2 sm:p-3">

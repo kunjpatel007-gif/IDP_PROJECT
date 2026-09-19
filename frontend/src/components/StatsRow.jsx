@@ -86,7 +86,6 @@ export default function StatsRow({ device, powerHistory }) {
       >
         <div className="flex items-baseline gap-2">
           <Counter value={1} className="font-mono text-[26px] font-medium tracking-tight text-on-surface sm:text-[30px]" />
-          <span className="font-mono text-[11px] text-on-surface-subtle">provisioned</span>
         </div>
       </Well>
 
@@ -102,9 +101,6 @@ export default function StatsRow({ device, powerHistory }) {
               online ? 'text-on-surface' : 'text-on-surface-subtle'
             }`}
           />
-          <span className="font-mono text-[11px] text-on-surface-subtle">
-            {connection === 'error' ? 'link down' : online ? 'reporting' : 'silent'}
-          </span>
         </div>
       </Well>
 
@@ -159,9 +155,7 @@ export default function StatsRow({ device, powerHistory }) {
             >
               breaker open
             </motion.span>
-          ) : (
-            <span className="font-mono text-[11px] text-on-surface-subtle">clear</span>
-          )}
+          ) : null}
         </div>
       </Well>
     </section>

@@ -202,21 +202,9 @@ export default function PowerFlowRibbon({
         <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-on-surface-muted">
           Energy flow
         </span>
-        <span className="font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle">
-          grid → relay → load
-        </span>
       </div>
       <div ref={wrapRef} className="relative bg-surface-subtle shadow-well" style={{ height }}>
         <canvas ref={canvasRef} className="block" />
-        <span className="pointer-events-none absolute left-2 top-1 font-mono text-[9px] uppercase tracking-[0.06em] text-on-surface-subtle">
-          mains
-        </span>
-        <span className="pointer-events-none absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] uppercase tracking-[0.06em] text-on-surface-subtle">
-          {closed ? 'closed' : 'open'}
-        </span>
-        <span className="pointer-events-none absolute right-2 top-1 font-mono text-[9px] uppercase tracking-[0.06em] text-on-surface-subtle">
-          socket
-        </span>
       </div>
     </div>
   );

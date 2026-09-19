@@ -108,9 +108,6 @@ export default function BootSequence() {
             />
           </motion.div>
 
-          <p className="absolute bottom-6 font-mono text-[10px] tracking-[0.06em] text-on-surface-subtle">
-            press any key to skip
-          </p>
         </motion.div>
       ) : null}
     </AnimatePresence>

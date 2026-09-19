@@ -185,7 +185,7 @@ export default function ACScope({
           Mains waveform
         </span>
         <span className="font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle">
-          {frequency ? `${Number(frequency).toFixed(2)} Hz` : '—'} · 2 cycles/div×5
+          {frequency ? `${Number(frequency).toFixed(2)} Hz` : '—'}
         </span>
       </div>
 

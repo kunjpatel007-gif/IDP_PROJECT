@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import BootSequence from '@/components/BootSequence';
 import CommandPipeline from '@/components/CommandPipeline';
 import DeviceCard from '@/components/DeviceCard';
-import GridBackground from '@/components/GridBackground';
+import ElectricField from '@/components/ElectricField';
 import LiveDataBadge from '@/components/LiveDataBadge';
 import Sidebar from '@/components/Sidebar';
 import StatsRow from '@/components/StatsRow';
@@ -82,7 +82,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-surface text-on-surface">
-      <GridBackground alert={device.tripped} />
+      <ElectricField
+        intensity={device.unreachable ? 0 : Math.min(1, device.utilisation / 100)}
+        overloaded={device.overloaded}
+        tripped={device.tripped}
+      />
 
       <TripOverlay
         tripped={device.tripped}
@@ -103,24 +107,10 @@ export default function App() {
       <div className={`relative z-10 lg:pl-60 ${shaking ? 'chassis-shake' : ''}`}>
         <main className="mx-auto max-w-[1180px] px-4 py-6 sm:px-6 lg:px-10 lg:py-9">
           {/* ── Header ─────────────────────────────────────────────── */}
-          <header className="mb-7 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h1 className="font-display text-[24px] font-semibold tracking-tight text-on-surface lg:text-[28px]">
-                Dashboard
-              </h1>
-              <p className="mt-1 text-[13px] text-on-surface-muted">
-                Live mains telemetry from your connected SmartAdapters.
-              </p>
-            </div>
-            {device.lastSnapshotAt ? (
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="font-mono text-[11px] tracking-[0.04em] text-on-surface-subtle"
-              >
-                Last packet {fmtClock(device.lastSnapshotAt)}
-              </motion.span>
-            ) : null}
+          <header className="mb-7">
+            <h1 className="font-display text-[26px] font-bold uppercase tracking-[0.1em] text-on-surface lg:text-[30px]">
+              Dashboard
+            </h1>
           </header>
 
           {/* ── Link fault banner ──────────────────────────────────── */}
@@ -171,17 +161,8 @@ export default function App() {
           <StatsRow device={device} powerHistory={powerHistory} />
 
           {/* ── Adapter bay ────────────────────────────────────────── */}
-          <section className="mt-8 flex flex-col gap-4">
-            <div className="flex items-baseline justify-between">
-              <h2 className="font-display text-[17px] font-semibold tracking-tight text-on-surface">
-                SmartAdapters
-              </h2>
-              <span className="font-mono text-[11px] tracking-[0.04em] text-on-surface-subtle">
-                1 of 1 provisioned
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)]">
+          <section className="mt-7">
+            <div>
               <DeviceCard
                 device={device}
                 voltageHistory={voltageHistory}
@@ -190,26 +171,9 @@ export default function App() {
                 commandInFlight={commandInFlight}
               />
 
-              {/* Empty bay — an unpopulated slot, labelled as such. */}
-              <div className="hidden min-h-[320px] flex-col items-center justify-center rounded border border-dashed border-border-subtle bg-surface-card/30 px-6 text-center xl:flex">
-                <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-on-surface-subtle">
-                  Bay 02 · unpopulated
-                </p>
-                <p className="mt-2 max-w-[240px] text-[12px] leading-[17px] text-on-surface-subtle">
-                  Flash another adapter with the same device key and it appears here on its first
-                  telemetry push.
-                </p>
-              </div>
             </div>
           </section>
 
-          <footer className="mt-10 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border-subtle pt-5 font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle">
-            <span>ESP32 · PZEM-004T · active-LOW relay</span>
-            <span className="hidden sm:inline">·</span>
-            <span>telemetry push 5s · command poll 2s</span>
-            <span className="hidden sm:inline">·</span>
-            <span>stale threshold 15s</span>
-          </footer>
         </main>
       </div>
 

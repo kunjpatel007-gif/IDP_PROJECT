@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import ArcDischarge from '@/components/ArcDischarge';
 import { usePrevious } from '@/hooks/usePrevious';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { fmt } from '@/lib/format';
@@ -50,6 +51,9 @@ export default function TripOverlay({ tripped, peakWatts, threshold, onShake }) 
           exit={{ opacity: 0 }}
           transition={{ duration: reduced ? 0 : 0.42, ease: 'easeOut' }}
         >
+          {/* Dielectric breakdown across the whole console */}
+          <ArcDischarge active intensity={1} />
+
           {/* Field flash */}
           <div className="absolute inset-0 bg-[#2a0708]/85 backdrop-blur-[2px]" />
           {!reduced ? (

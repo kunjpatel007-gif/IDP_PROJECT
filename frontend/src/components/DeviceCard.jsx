@@ -211,9 +211,6 @@ export default function DeviceCard({
               <h3 className="truncate font-display text-[16px] font-semibold tracking-tight text-on-surface">
                 {deviceName}
               </h3>
-              <p className="mt-0.5 font-mono text-[10px] tracking-[0.05em] text-on-surface-subtle">
-                {deviceId} · PZEM-004T
-              </p>
             </div>
             <span className="flex shrink-0 items-center gap-2">
               {staleTripped ? (

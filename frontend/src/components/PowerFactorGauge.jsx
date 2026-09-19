@@ -114,10 +114,10 @@ export default function PowerFactorGauge({ value = null, dimmed = false }) {
         </motion.g>
 
         {/* Endpoint labels */}
-        <text x="20" y="98" fill="#696c7a" fontSize="8.5" fontFamily="JetBrains Mono, monospace">
+        <text x="20" y="98" fill="#696c7a" fontSize="8.5" fontFamily="IBM Plex Mono, monospace">
           0.0
         </text>
-        <text x="136" y="98" fill="#696c7a" fontSize="8.5" fontFamily="JetBrains Mono, monospace">
+        <text x="136" y="98" fill="#696c7a" fontSize="8.5" fontFamily="IBM Plex Mono, monospace">
           1.0
         </text>
       </svg>
