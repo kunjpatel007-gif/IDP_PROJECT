@@ -35,7 +35,7 @@ export const COMMAND_ROUNDTRIP_MS = 7_000;
  * Rehearsal mode. `npm run dev:mock` only — never on in a normal build, and
  * the mock module is dynamically imported so it stays out of the prod bundle.
  */
-export const MOCK = import.meta.env.VITE_MOCK === '1';
+export const MOCK = import.meta.env.VITE_MOCK === '1' || (typeof window !== 'undefined' && window.location.search.includes('mock='));
 
 export const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
