@@ -144,7 +144,7 @@ export default function ControlButton({
         onMouseLeave={() => setTipOpen(false)}
         onFocus={() => setTipOpen(true)}
         onBlur={() => setTipOpen(false)}
-        className={`actuator inline-flex h-8 items-center gap-2 rounded border px-3 font-body text-[12px] font-medium ${palette.base} ${className}`}
+        className={`actuator inline-flex h-10 items-center gap-2 rounded border px-3.5 font-body text-[13px] font-medium lg:h-8 lg:px-3 lg:text-[12px] ${palette.base} ${className}`}
       >
         <span className="flex w-[18px] items-center justify-center">
           {busy ? (
@@ -169,7 +169,7 @@ export default function ControlButton({
             animate={{ opacity: 1, y: 0 }}
             exit={reduced ? { opacity: 0 } : { opacity: 0, y: 4 }}
             transition={{ duration: 0.14, ease: [0.22, 1, 0.36, 1] }}
-            className="pointer-events-none absolute bottom-full right-0 z-30 mb-2 w-60 rounded border border-border-muted bg-surface-subtle px-3 py-2 text-[11px] leading-[16px] text-on-surface-muted shadow-flyout"
+            className="pointer-events-none absolute bottom-full right-0 z-30 mb-2 w-[min(15rem,calc(100vw-3rem))] rounded border border-border-muted bg-surface-subtle px-3 py-2 text-[11px] leading-[16px] text-on-surface-muted shadow-flyout"
           >
             {copy.tooltip}
           </motion.div>

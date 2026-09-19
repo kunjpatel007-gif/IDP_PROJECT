@@ -87,8 +87,8 @@ export default function PhasorDiagram({
         </span>
       </div>
 
-      <div className="flex flex-col items-center gap-2 p-3">
-        <svg viewBox="0 0 148 148" className="w-full max-w-[168px]" role="img" aria-label={`Phasor diagram, phase angle ${phiDeg.toFixed(1)} degrees`}>
+      <div className="flex flex-col items-center gap-1 p-2.5 sm:gap-2 sm:p-3">
+        <svg viewBox="0 0 148 148" className="w-full max-w-[150px] sm:max-w-[168px]" role="img" aria-label={`Phasor diagram, phase angle ${phiDeg.toFixed(1)} degrees`}>
           {/* Unit circle and axes */}
           <circle cx={CX} cy={CY} r={R} fill="none" stroke="#292a32" strokeWidth="1" />
           <circle cx={CX} cy={CY} r={R * 0.55} fill="none" stroke="#292a32" strokeWidth="1" strokeDasharray="1 4" />
@@ -123,7 +123,7 @@ export default function PhasorDiagram({
         </svg>
 
         {/* Power triangle */}
-        <svg viewBox="0 0 148 62" className="w-full max-w-[168px]" role="img" aria-label="Power triangle">
+        <svg viewBox="0 0 148 62" className="w-full max-w-[150px] sm:max-w-[168px]" role="img" aria-label="Power triangle">
           {S > 0 ? (
             <>
               <line x1="8" y1="52" x2={8 + pLen} y2="52" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" />

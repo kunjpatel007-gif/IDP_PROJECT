@@ -32,10 +32,10 @@ function Well({ label, address, children, footer, alert = false, className = '' 
       ) : null}
 
       <div className="relative flex h-7 items-center justify-between border-b border-border-subtle px-3.5">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-on-surface-muted">
+        <span className="truncate whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.05em] text-on-surface-muted sm:text-[11px]">
           {label}
         </span>
-        {address}
+        <span className="flex shrink-0 items-center">{address}</span>
       </div>
 
       <div className="relative flex flex-1 flex-col justify-end px-3.5 pb-3 pt-4">{children}</div>
@@ -78,14 +78,14 @@ export default function StatsRow({ device, powerHistory }) {
       <Well
         label="Devices"
         address={
-          <span className="font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle">
+          <span className="hidden font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle sm:inline">
             bench
           </span>
         }
         className="min-h-[104px]"
       >
         <div className="flex items-baseline gap-2">
-          <Counter value={1} className="font-mono text-[30px] font-medium tracking-tight text-on-surface" />
+          <Counter value={1} className="font-mono text-[26px] font-medium tracking-tight text-on-surface sm:text-[30px]" />
           <span className="font-mono text-[11px] text-on-surface-subtle">provisioned</span>
         </div>
       </Well>
@@ -98,7 +98,7 @@ export default function StatsRow({ device, powerHistory }) {
         <div className="flex items-baseline gap-2">
           <Counter
             value={online ? 1 : 0}
-            className={`font-mono text-[30px] font-medium tracking-tight ${
+            className={`font-mono text-[26px] font-medium tracking-tight sm:text-[30px] ${
               online ? 'text-on-surface' : 'text-on-surface-subtle'
             }`}
           />
@@ -111,7 +111,7 @@ export default function StatsRow({ device, powerHistory }) {
       <Well
         label="Current power"
         address={
-          <span className="font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle">
+          <span className="hidden whitespace-nowrap font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle sm:inline">
             {unreachable ? 'no link' : `${Math.round(headroom).toLocaleString('en-US')} W spare`}
           </span>
         }
@@ -128,7 +128,7 @@ export default function StatsRow({ device, powerHistory }) {
         }
       >
         <div className="flex items-baseline gap-1.5">
-          <span className={`font-mono text-[30px] font-medium tracking-tight ${powerTone}`}>
+          <span className={`font-mono text-[26px] font-medium tracking-tight sm:text-[30px] ${powerTone}`}>
             {scaled.value.toLocaleString('en-US', {
               minimumFractionDigits: scaled.decimals,
               maximumFractionDigits: scaled.decimals,
@@ -147,7 +147,7 @@ export default function StatsRow({ device, powerHistory }) {
         <div className="flex items-baseline justify-between gap-2">
           <Counter
             value={tripped ? 1 : 0}
-            className={`font-mono text-[30px] font-medium tracking-tight ${
+            className={`font-mono text-[26px] font-medium tracking-tight sm:text-[30px] ${
               tripped ? 'text-accent-red' : 'text-on-surface'
             }`}
           />

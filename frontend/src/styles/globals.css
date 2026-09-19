@@ -17,6 +17,9 @@
 
   body {
     overscroll-behavior: none;
+    /* Keep content clear of notches and home indicators; zero on desktop. */
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
     font-family: 'Inter', system-ui, sans-serif;
     /* Lock numeral alignment so live refreshes never twitch the layout. */
     font-feature-settings: 'cv05', 'cv08', 'tnum';

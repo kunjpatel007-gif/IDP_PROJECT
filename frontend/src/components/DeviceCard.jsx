@@ -240,6 +240,7 @@ export default function DeviceCard({
               {tripped ? 'Peak trip load' : 'Current power'}
             </span>
             <PowerMeter
+              valueClassName="font-mono text-[40px] font-light tracking-tight sm:text-5xl"
               value={offline ? 0 : displayPower}
               unit="W"
               tone={powerTone}
@@ -309,7 +310,7 @@ export default function DeviceCard({
           {/* ── Actuator deck ────────────────────────────────────── */}
           <motion.div
             variants={strip}
-            className="flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-4"
+            className="flex flex-wrap items-center justify-between gap-x-3 gap-y-4 border-t border-border-subtle pt-4"
           >
             <span className="flex items-center gap-2.5">
               <span className="font-mono text-[10px] uppercase tracking-[0.05em] text-on-surface-subtle">
@@ -323,7 +324,7 @@ export default function DeviceCard({
                 type="button"
                 onClick={() => setDetailsOpen((v) => !v)}
                 aria-expanded={detailsOpen}
-                className="actuator inline-flex h-8 items-center gap-1.5 rounded border border-border-subtle px-3 text-[12px] font-medium text-on-surface-muted hover:border-border-muted hover:bg-surface-card-hover hover:text-on-surface"
+                className="actuator inline-flex h-10 items-center gap-1.5 rounded border border-border-subtle px-3.5 text-[13px] lg:h-8 lg:px-3 lg:text-[12px] font-medium text-on-surface-muted hover:border-border-muted hover:bg-surface-card-hover hover:text-on-surface"
               >
                 Details
                 <motion.span

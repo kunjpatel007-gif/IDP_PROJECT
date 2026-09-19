@@ -94,7 +94,7 @@ export default function DetailsPanel({ open, onClose, device }) {
               type="button"
               onClick={onClose}
               aria-label="Close extended telemetry"
-              className="text-on-surface-subtle transition-colors hover:text-on-surface"
+              className="-m-1.5 p-1.5 text-on-surface-subtle transition-colors hover:text-on-surface"
             >
               <IconClose width={15} height={15} />
             </button>
