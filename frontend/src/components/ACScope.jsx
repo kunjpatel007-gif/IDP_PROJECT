@@ -90,7 +90,11 @@ export default function ACScope({
 
       if (!reduced) sweep += dt * SWEEP_HZ * Math.PI * 2;
 
-      ctx.clearRect(0, 0, width, height);
+      // Phosphor persistence: veil instead of clear, so the beam leaves a
+      // decaying trail the way a real storage scope does.
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = 'rgba(22, 23, 28, 0.26)';
+      ctx.fillRect(0, 0, width, height);
 
       // ── Graticule ───────────────────────────────────────────────
       ctx.strokeStyle = 'rgba(53, 55, 66, 0.5)';
@@ -122,6 +126,8 @@ export default function ACScope({
 
       const omega = (CYCLES * Math.PI * 2) / width;
 
+      // Beam dwell: a CRT spot is brighter where the trace moves slowly, so
+      // peaks burn in and zero crossings run thin. Segment alpha tracks |dy/dx|.
       const trace = (amplitude, phase, colour, lineWidth, glow) => {
         if (amplitude < 0.004) {
           ctx.strokeStyle = colour;
@@ -134,23 +140,56 @@ export default function ACScope({
           ctx.globalAlpha = 1;
           return;
         }
-        ctx.beginPath();
-        for (let x = 0; x <= width; x += 1) {
-          const y = mid - Math.sin(x * omega + sweep - phase) * amplitude * usable;
-          if (x === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
+        // Bloom pass first, underneath everything.
         if (glow) {
+          ctx.beginPath();
+          for (let x = 0; x <= width; x += 1) {
+            const y = mid - Math.sin(x * omega + sweep - phase) * amplitude * usable;
+            if (x === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
           ctx.strokeStyle = colour;
-          ctx.globalAlpha = 0.18;
-          ctx.lineWidth = lineWidth + 3;
+          ctx.globalAlpha = 0.16;
+          ctx.lineWidth = lineWidth + 4;
           ctx.stroke();
           ctx.globalAlpha = 1;
         }
-        ctx.strokeStyle = colour;
+
         ctx.lineWidth = lineWidth;
         ctx.lineJoin = 'round';
-        ctx.stroke();
+        ctx.lineCap = 'round';
+        let prevX = 0;
+        let prevY = mid - Math.sin(sweep - phase) * amplitude * usable;
+        for (let x = 2; x <= width; x += 2) {
+          const y = mid - Math.sin(x * omega + sweep - phase) * amplitude * usable;
+          const slope = Math.abs(y - prevY) / 2;
+          // Slow beam → concentrated charge → bright. Fast beam → dim.
+          const dwell = 1 / (1 + slope * 0.9);
+          ctx.strokeStyle = colour;
+          ctx.globalAlpha = 0.42 + dwell * 0.58;
+          ctx.beginPath();
+          ctx.moveTo(prevX, prevY);
+          ctx.lineTo(x, y);
+          ctx.stroke();
+          prevX = x;
+          prevY = y;
+        }
+        ctx.globalAlpha = 1;
+
+        // Trigger marker at the rising zero crossing.
+        const cross = ((phase - sweep) / omega + width) % (Math.PI * 2 / omega);
+        if (amplitude > 0.02) {
+          ctx.fillStyle = colour;
+          ctx.globalAlpha = 0.8;
+          ctx.beginPath();
+          ctx.moveTo(2, mid - 4);
+          ctx.lineTo(8, mid);
+          ctx.lineTo(2, mid + 4);
+          ctx.closePath();
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+        void cross;
       };
 
       // Voltage first, current lagging by φ, drawn on top.
@@ -189,8 +228,16 @@ export default function ACScope({
         </span>
       </div>
 
-      <div ref={wrapRef} className="relative bg-surface-subtle shadow-well" style={{ height }}>
+      <div ref={wrapRef} className="relative overflow-hidden bg-surface-subtle shadow-well" style={{ height }}>
         <canvas ref={canvasRef} className="block" />
+        {/* Glass: a faint diagonal sheen across the tube face. */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(118deg, rgba(255,255,255,0.055) 0%, transparent 34%, transparent 70%, rgba(255,255,255,0.028) 100%)',
+          }}
+        />
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border-subtle px-3 py-2">

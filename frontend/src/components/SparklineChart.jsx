@@ -40,7 +40,12 @@ export default function SparklineChart({
   flatTolerance = 0.01,
   dimmed = false,
   className = '',
+  scaleMax = null,
+  tooltip = false,
+  unit = '',
+  decimals = 2,
 }) {
+  const [hover, setHover] = useState(null);
   const reduced = useReducedMotion();
   const [wrapRef, width] = useElementWidth();
   const [entering, setEntering] = useState(false);
@@ -61,6 +66,20 @@ export default function SparklineChart({
       if (inner) cancelAnimationFrame(inner);
     };
   }, [values, reduced]);
+
+  // Colour tracks the reading against its own headroom: calm green through
+  // amber to red as the trace approaches the limit it is measured against.
+  const latest = values.length ? values[values.length - 1] : 0;
+  const ratio = scaleMax ? Math.min(1, Math.max(0, latest / scaleMax)) : null;
+  const dynamicColor =
+    ratio == null
+      ? color
+      : ratio < 0.5
+        ? '#22c55e'
+        : ratio < 0.8
+          ? '#d97736'
+          : '#f87171';
+  const stroke = dynamicColor;
 
   const step = width > 0 ? width / Math.max(1, capacity - 1) : 0;
   const pad = 3;
@@ -90,15 +109,48 @@ export default function SparklineChart({
   const area = `${line} L${width},${height} L${points[0][0].toFixed(2)},${height} Z`;
 
   const [lastX, lastY] = points[points.length - 1];
-  const gradientId = `spark-${color.replace('#', '')}-${Math.round(height)}`;
+  const gradientId = `spark-${stroke.replace('#', '')}-${Math.round(height)}-${capacity}`;
+
+  const onMove = (event) => {
+    if (!tooltip) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    let nearest = 0;
+    let best = Infinity;
+    points.forEach(([px], i) => {
+      const d = Math.abs(px - x);
+      if (d < best) {
+        best = d;
+        nearest = i;
+      }
+    });
+    setHover(nearest);
+  };
 
   return (
-    <div ref={wrapRef} className={`w-full ${className}`} style={{ height }} aria-hidden="true">
+    <div
+      ref={wrapRef}
+      className={`relative w-full ${className}`}
+      style={{ height }}
+      aria-hidden="true"
+      onPointerMove={onMove}
+      onPointerLeave={() => setHover(null)}
+    >
+      {/* Readout follows the pointer; pointer-only, so touch is unaffected. */}
+      {tooltip && hover != null && points[hover] ? (
+        <div
+          className="pointer-events-none absolute z-20 -translate-x-1/2 whitespace-nowrap border border-border-muted bg-surface-subtle px-1.5 py-0.5 font-mono text-[9px] text-on-surface shadow-flyout"
+          style={{ left: points[hover][0], top: -4 }}
+        >
+          {values[hover].toFixed(decimals)}
+          {unit}
+        </div>
+      ) : null}
       <svg width={width} height={height} className="block overflow-visible">
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity={dimmed ? 0.14 : 0.3} />
-            <stop offset="100%" stopColor={color} stopOpacity="0" />
+            <stop offset="0%" stopColor={stroke} stopOpacity={dimmed ? 0.14 : 0.3} />
+            <stop offset="100%" stopColor={stroke} stopOpacity="0" />
           </linearGradient>
         </defs>
 
@@ -112,19 +164,33 @@ export default function SparklineChart({
           <path
             d={line}
             fill="none"
-            stroke={color}
+            stroke={stroke}
             strokeOpacity={dimmed ? 0.4 : 0.95}
             strokeWidth="1.25"
             strokeLinejoin="round"
             strokeLinecap="round"
           />
           {/* Live head: the sample that just landed. */}
-          <circle cx={lastX} cy={lastY} r="2.4" fill={color} fillOpacity={dimmed ? 0.5 : 1} />
+          <circle cx={lastX} cy={lastY} r="2.4" fill={stroke} fillOpacity={dimmed ? 0.5 : 1} />
           {!dimmed && !reduced ? (
-            <circle cx={lastX} cy={lastY} r="2.4" fill="none" stroke={color} strokeWidth="1">
+            <circle cx={lastX} cy={lastY} r="2.4" fill="none" stroke={stroke} strokeWidth="1">
               <animate attributeName="r" values="2.4;7;2.4" dur="1.9s" repeatCount="indefinite" />
               <animate attributeName="stroke-opacity" values="0.7;0;0.7" dur="1.9s" repeatCount="indefinite" />
             </circle>
+          ) : null}
+          {tooltip && hover != null && points[hover] ? (
+            <g>
+              <line
+                x1={points[hover][0]}
+                y1={0}
+                x2={points[hover][0]}
+                y2={height}
+                stroke={stroke}
+                strokeOpacity="0.45"
+                strokeWidth="1"
+              />
+              <circle cx={points[hover][0]} cy={points[hover][1]} r="2.6" fill={stroke} />
+            </g>
           ) : null}
         </g>
       </svg>

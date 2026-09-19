@@ -86,6 +86,7 @@ export default function ControlButton({
   const [phase, setPhase] = useState('idle'); // idle | busy | done
   const [glyphPhase, setGlyphPhase] = useState(null);
   const [tipOpen, setTipOpen] = useState(false);
+  const [ripple, setRipple] = useState(null);
   const timers = useRef([]);
 
   useEffect(
@@ -100,8 +101,14 @@ export default function ControlButton({
   const busy = phase === 'busy' || externalBusy;
   const done = phase === 'done';
 
-  const handleClick = async () => {
+  const handleClick = async (event) => {
     if (busy || disabled) return;
+
+    // Light spreads from where the cap was actually struck.
+    const rect = event.currentTarget.getBoundingClientRect();
+    const id = Date.now();
+    setRipple({ id, x: event.clientX - rect.left, y: event.clientY - rect.top });
+    setTimeout(() => setRipple((r) => (r && r.id === id ? null : r)), 620);
 
     setPhase('busy');
     // Fire the mechanism immediately — the user acted, the UI acknowledges now.
@@ -144,8 +151,35 @@ export default function ControlButton({
         onMouseLeave={() => setTipOpen(false)}
         onFocus={() => setTipOpen(true)}
         onBlur={() => setTipOpen(false)}
-        className={`actuator inline-flex h-10 items-center gap-2 rounded border px-3.5 font-body text-[13px] font-medium lg:h-8 lg:px-3 lg:text-[12px] ${palette.base} ${className}`}
+        className={`actuator relative isolate inline-flex h-10 items-center gap-2 overflow-hidden rounded border px-3.5 font-body text-[13px] font-medium shadow-[0_2px_0_0_rgba(0,0,0,0.45)] active:shadow-none lg:h-8 lg:px-3 lg:text-[12px] ${palette.base} ${className}`}
       >
+        {/* Textured cap */}
+        <span
+          className="pointer-events-none absolute inset-0 -z-10 opacity-[0.07]"
+          style={{
+            backgroundImage:
+              'repeating-conic-gradient(rgba(255,255,255,0.8) 0% 25%, transparent 0% 50%)',
+            backgroundSize: '3px 3px',
+          }}
+        />
+        {ripple ? (
+          <motion.span
+            key={ripple.id}
+            className="pointer-events-none absolute -z-10 h-2 w-2 rounded-full bg-current"
+            style={{ left: ripple.x, top: ripple.y }}
+            initial={{ scale: 0, opacity: 0.45 }}
+            animate={{ scale: 26, opacity: 0 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+          />
+        ) : null}
+        {done ? (
+          <motion.span
+            className="pointer-events-none absolute inset-0 -z-10 border border-accent-green"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 1, 0] }}
+            transition={{ duration: 0.9 }}
+          />
+        ) : null}
         <span className="flex w-[18px] items-center justify-center">
           {busy ? (
             <span className="btn-spinner" />

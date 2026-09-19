@@ -109,7 +109,11 @@ export default function CommandPipeline({ run, command, confirmed, onDone }) {
 
                 return (
                   <div key={s.id} className="flex flex-1 items-center gap-2">
-                    <div className="flex flex-1 flex-col gap-1.5">
+                    <div
+                      className={`flex flex-1 flex-col gap-1.5 ${
+                        index === 3 && active && !reduced ? 'anxious-jitter' : ''
+                      }`}
+                    >
                       <div className="flex items-baseline justify-between gap-2">
                         <span
                           className={`font-mono text-[10px] tracking-[0.04em] ${
@@ -146,11 +150,32 @@ export default function CommandPipeline({ run, command, confirmed, onDone }) {
                     </div>
 
                     {index < STAGES.length - 1 ? (
-                      <span className="hidden text-on-surface-subtle sm:inline">›</span>
+                      <span className="hidden h-px w-4 shrink-0 self-center overflow-hidden sm:block">
+                        <motion.span
+                          className="block h-px w-[300%]"
+                          style={{
+                            backgroundImage:
+                              'repeating-linear-gradient(90deg, #d97736 0 4px, transparent 4px 9px)',
+                          }}
+                          animate={done ? { x: ['0%', '-66%'] } : { x: '0%' }}
+                          transition={{ duration: 0.7, repeat: Infinity, ease: 'linear' }}
+                        />
+                      </span>
                     ) : null}
                   </div>
                 );
               })}
+            </div>
+
+            {/* Overall progress with a glowing leading edge */}
+            <div className="relative mx-3 mb-3 h-[2px] overflow-hidden bg-surface-subtle">
+              <motion.div
+                className="absolute inset-y-0 left-0 bg-primary shadow-[0_0_8px_1px_rgba(217,119,54,0.8)]"
+                animate={{
+                  width: `${((outcome ? 4 : Math.max(0, stage)) / STAGES.length) * 100}%`,
+                }}
+                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+              />
             </div>
 
             {outcome ? (

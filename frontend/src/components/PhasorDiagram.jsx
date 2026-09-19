@@ -104,6 +104,25 @@ export default function PhasorDiagram({
             />
           ) : null}
 
+          {/* Afterimages: four ghosts spaced behind the present angle, so the
+              direction of rotation is readable from a still frame. */}
+          {live && !reduced
+            ? [1, 2, 3, 4].map((k) => {
+                const ghost = theta - k * 0.085;
+                const [gvx, gvy] = tip(vLen, ghost);
+                const [gix, giy] = tip(iLen, ghost - phi);
+                const fade = 0.3 - k * 0.062;
+                return (
+                  <g key={k} opacity={fade}>
+                    <line x1={CX} y1={CY} x2={gvx} y2={gvy} stroke="#9699a6" strokeWidth="2" strokeLinecap="round" />
+                    {iLen > 0 ? (
+                      <line x1={CX} y1={CY} x2={gix} y2={giy} stroke={accent} strokeWidth="2" strokeLinecap="round" />
+                    ) : null}
+                  </g>
+                );
+              })
+            : null}
+
           {/* Voltage phasor */}
           <line x1={CX} y1={CY} x2={vx} y2={vy} stroke="#9699a6" strokeWidth="2" strokeLinecap="round" />
           <circle cx={vx} cy={vy} r="3" fill="#9699a6" />
@@ -117,6 +136,34 @@ export default function PhasorDiagram({
           ) : null}
 
           <circle cx={CX} cy={CY} r="2.5" fill="#16171c" stroke="#4b4e5c" strokeWidth="1" />
+
+          {/* Instantaneous magnitudes, riding along with each tip */}
+          {live ? (
+            <>
+              <text
+                x={vx + (vx > CX ? 5 : -5)}
+                y={vy + (vy > CY ? 9 : -4)}
+                fill="#9699a6"
+                fontSize="7.5"
+                textAnchor={vx > CX ? 'start' : 'end'}
+                fontFamily="JetBrains Mono, monospace"
+              >
+                {V.toFixed(0)}V
+              </text>
+              {iLen > 0 ? (
+                <text
+                  x={ix + (ix > CX ? 5 : -5)}
+                  y={iy + (iy > CY ? 9 : -4)}
+                  fill={accent}
+                  fontSize="7.5"
+                  textAnchor={ix > CX ? 'start' : 'end'}
+                  fontFamily="JetBrains Mono, monospace"
+                >
+                  {I.toFixed(2)}A
+                </text>
+              ) : null}
+            </>
+          ) : null}
         </svg>
 
         {/* Power triangle */}

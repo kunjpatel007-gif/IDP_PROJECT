@@ -26,6 +26,34 @@ export default function LiveDataBadge({ seq, snapshotCount, connected, silentFor
 
   const seconds = silentFor == null ? null : Math.floor(silentFor / 1000);
 
+  // Packets per second over a short rolling window of arrival times.
+  const arrivals = useRef([]);
+  const [rate, setRate] = useState(0);
+  useEffect(() => {
+    const now = Date.now();
+    arrivals.current = [...arrivals.current, now].filter((t) => now - t < 20000).slice(-12);
+    if (arrivals.current.length > 1) {
+      const span = (arrivals.current[arrivals.current.length - 1] - arrivals.current[0]) / 1000;
+      setRate(span > 0 ? (arrivals.current.length - 1) / span : 0);
+    }
+  }, [snapshotCount]);
+
+  if (!connected) {
+    return (
+      <motion.div
+        initial={reduced ? { opacity: 1 } : { opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="static-noise fixed bottom-5 right-5 z-50 hidden items-center gap-2.5 border border-accent-red/45 bg-surface-card/95 px-3 py-2 shadow-flyout sm:flex"
+      >
+        <StatusOrb status="tripped" size={7} />
+        <span className="font-mono text-[11px] tracking-[0.06em] text-accent-red">LINK DOWN</span>
+        {seconds != null ? (
+          <span className="font-mono text-[10px] text-on-surface-subtle">{seconds}s</span>
+        ) : null}
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={reduced ? { opacity: 1 } : { opacity: 0, y: 12 }}
@@ -42,6 +70,10 @@ export default function LiveDataBadge({ seq, snapshotCount, connected, silentFor
           {seq != null ? String(seq).padStart(4, '0') : '––––'}
         </span>
       </div>
+      <span className="h-3 w-px bg-border-muted" />
+      <span className="font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle">
+        {rate > 0 ? `${rate.toFixed(2)}/s` : '—'}
+      </span>
       <span className="h-3 w-px bg-border-muted" />
       <span className="font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle">
         {seconds == null ? 'no sync' : `${seconds}s`}

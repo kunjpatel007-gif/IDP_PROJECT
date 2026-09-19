@@ -88,7 +88,7 @@ export default function TripCurve({ current = 0, threshold = 1500, voltage = 230
           {[0.4, 1, 2, 5, 10, 20].map((m) => (
             <g key={`x${m}`}>
               <line x1={xOf(m)} y1={PAD.t} x2={xOf(m)} y2={H - PAD.b} stroke="#292a32" strokeWidth="1" />
-              <text x={xOf(m)} y={H - PAD.b + 11} fill="#696c7a" fontSize="7.5" textAnchor="middle" fontFamily="IBM Plex Mono, monospace">
+              <text x={xOf(m)} y={H - PAD.b + 11} fill="#696c7a" fontSize="7.5" textAnchor="middle" fontFamily="JetBrains Mono, monospace">
                 {m}
               </text>
             </g>
@@ -96,7 +96,7 @@ export default function TripCurve({ current = 0, threshold = 1500, voltage = 230
           {[0.02, 0.2, 2, 20, 200].map((t) => (
             <g key={`y${t}`}>
               <line x1={PAD.l} y1={yOf(t)} x2={W - PAD.r} y2={yOf(t)} stroke="#292a32" strokeWidth="1" />
-              <text x={PAD.l - 4} y={yOf(t) + 2.5} fill="#696c7a" fontSize="7.5" textAnchor="end" fontFamily="IBM Plex Mono, monospace">
+              <text x={PAD.l - 4} y={yOf(t) + 2.5} fill="#696c7a" fontSize="7.5" textAnchor="end" fontFamily="JetBrains Mono, monospace">
                 {t}
               </text>
             </g>
@@ -134,7 +134,7 @@ export default function TripCurve({ current = 0, threshold = 1500, voltage = 230
             <circle r="3.5" fill={accent} />
           </motion.g>
 
-          <text x={PAD.l} y={H - 3} fill="#696c7a" fontSize="7" fontFamily="IBM Plex Mono, monospace">
+          <text x={PAD.l} y={H - 3} fill="#696c7a" fontSize="7" fontFamily="JetBrains Mono, monospace">
             × pickup
           </text>
         </svg>

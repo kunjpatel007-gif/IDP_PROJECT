@@ -1,37 +1,45 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 /**
- * Power-on self test.
+ * Power-on self test, rendered as a serial terminal on a tired CRT.
  *
- * Runs once, on the first load of the session, for about two and a half
- * seconds. Instrument racks announce themselves when they come up, and this
- * is the console doing the same: checked lines scroll past, the last one
- * hands over to the live link, then it wipes.
+ * Lines do not appear — they arrive, character by character, at a jittered
+ * rate that imitates bytes landing over a 115200 baud link. Each line blooms
+ * with phosphor as it lands and decays to its resting brightness a beat later.
  *
- * It is skippable on any key or click, because the second time you see it
- * during a rehearsal it stops being an entrance and starts being a delay.
+ * The tube is doing its own thing underneath: a curvature vignette, tracking
+ * bars that tear across at random intervals, and a single-pixel mains hum band
+ * drifting down the screen on a slow loop. The cursor leaves an afterimage
+ * when it blinks off, because phosphor does not switch.
+ *
+ * Runs once per session, skippable on any key or pointer press.
  */
 
 const LINES = [
-  { t: 120, text: 'SMARTADAPTER CONSOLE · POST', tone: 'head' },
-  { t: 420, text: 'chassis .................. ok' },
-  { t: 640, text: 'display tokens ........... ok' },
-  { t: 860, text: 'odometer strip ........... ok' },
-  { t: 1080, text: 'oscillograph ............. ok' },
-  { t: 1300, text: 'phasor engine ............ ok' },
-  { t: 1540, text: 'firestore channel ........ opening', tone: 'pending' },
-  { t: 1860, text: 'telemetry/socket1 ........ subscribed', tone: 'ok' },
-  { t: 2100, text: 'console ready', tone: 'ok' },
+  { text: 'SMARTADAPTER CONSOLE · POST', tone: 'head' },
+  { text: 'chassis .................. ok' },
+  { text: 'display tokens ........... ok' },
+  { text: 'odometer strip ........... ok' },
+  { text: 'oscillograph ............. ok' },
+  { text: 'phasor engine ............ ok' },
+  { text: 'field solver ............. ok' },
+  { text: 'firestore channel ........ opening', tone: 'pending' },
+  { text: 'telemetry/socket1 ........ subscribed', tone: 'ok' },
+  { text: 'console ready', tone: 'ok' },
 ];
 
-const TOTAL = 2650;
+const CHAR_MS = 11;
+const LINE_GAP = 95;
 
 export default function BootSequence() {
   const reduced = useReducedMotion();
   const [visible, setVisible] = useState(!reduced);
-  const [shown, setShown] = useState(0);
+  const [typed, setTyped] = useState([]);
+  const [flash, setFlash] = useState(false);
+  const [bars, setBars] = useState([]);
+  const timers = useRef([]);
 
   useEffect(() => {
     if (reduced) {
@@ -39,20 +47,52 @@ export default function BootSequence() {
       return undefined;
     }
 
-    const timers = LINES.map((line, index) =>
-      setTimeout(() => setShown(index + 1), line.t)
-    );
-    const end = setTimeout(() => setVisible(false), TOTAL);
+    let clock = 220;
+    LINES.forEach((line, li) => {
+      for (let ci = 1; ci <= line.text.length; ci += 1) {
+        // Jitter each character so the cadence never sounds metronomic.
+        clock += CHAR_MS * (0.45 + Math.random() * 1.5);
+        const at = clock;
+        timers.current.push(
+          setTimeout(() => {
+            setTyped((prev) => {
+              const next = [...prev];
+              next[li] = ci;
+              return next;
+            });
+          }, at)
+        );
+      }
+      clock += LINE_GAP;
+    });
 
-    const skip = () => {
-      setVisible(false);
+    // Final line lands, the tube flashes, then we dissolve.
+    timers.current.push(setTimeout(() => setFlash(true), clock + 60));
+    timers.current.push(setTimeout(() => setFlash(false), clock + 230));
+    timers.current.push(setTimeout(() => setVisible(false), clock + 520));
+
+    // Tracking errors at irregular intervals.
+    const scheduleBar = () => {
+      const delay = 400 + Math.random() * 1100;
+      timers.current.push(
+        setTimeout(() => {
+          const id = Math.random();
+          setBars((b) => [...b, { id, top: Math.random() * 80, h: 1 + Math.random() * 3 }]);
+          timers.current.push(
+            setTimeout(() => setBars((b) => b.filter((x) => x.id !== id)), 420)
+          );
+          scheduleBar();
+        }, delay)
+      );
     };
+    scheduleBar();
+
+    const skip = () => setVisible(false);
     window.addEventListener('keydown', skip, { once: true });
     window.addEventListener('pointerdown', skip, { once: true });
 
     return () => {
-      timers.forEach(clearTimeout);
-      clearTimeout(end);
+      timers.current.forEach(clearTimeout);
       window.removeEventListener('keydown', skip);
       window.removeEventListener('pointerdown', skip);
     };
@@ -62,52 +102,107 @@ export default function BootSequence() {
     <AnimatePresence>
       {visible ? (
         <motion.div
-          className="fixed inset-0 z-[95] flex items-center justify-center bg-surface"
+          className="fixed inset-0 z-[95] flex items-center justify-center overflow-hidden bg-surface"
           initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.4, ease: 'easeInOut' }}
+          exit={{ opacity: 0, filter: 'brightness(2.4)' }}
+          transition={{ duration: 0.42, ease: 'easeInOut' }}
           aria-hidden="true"
         >
           {/* Scanlines */}
           <div
-            className="pointer-events-none absolute inset-0 opacity-[0.35]"
+            className="pointer-events-none absolute inset-0 opacity-[0.38]"
             style={{
               backgroundImage:
-                'repeating-linear-gradient(to bottom, rgba(217,119,54,0.045) 0px, rgba(217,119,54,0.045) 1px, transparent 1px, transparent 3px)',
+                'repeating-linear-gradient(to bottom, rgba(217,119,54,0.05) 0px, rgba(217,119,54,0.05) 1px, transparent 1px, transparent 3px)',
             }}
           />
 
-          <motion.div
-            className="relative w-[min(420px,calc(100vw-3rem))] font-mono text-[12px] leading-[20px]"
-            exit={{ y: -14, opacity: 0 }}
-            transition={{ duration: 0.34 }}
-          >
-            {LINES.slice(0, shown).map((line) => (
-              <motion.p
-                key={line.text}
-                initial={{ opacity: 0, x: -6 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.16 }}
-                className={
-                  line.tone === 'head'
-                    ? 'mb-2 tracking-[0.12em] text-primary'
-                    : line.tone === 'ok'
-                      ? 'text-accent-green'
-                      : line.tone === 'pending'
-                        ? 'text-primary-soft'
-                        : 'text-on-surface-muted'
-                }
-              >
-                {line.text}
-              </motion.p>
-            ))}
-            <motion.span
-              className="mt-1 inline-block h-[13px] w-[7px] bg-primary align-middle"
-              animate={{ opacity: [1, 1, 0, 0] }}
-              transition={{ duration: 0.9, repeat: Infinity, times: [0, 0.5, 0.5, 1] }}
-            />
-          </motion.div>
+          {/* Mains hum band */}
+          <div
+            className="pointer-events-none absolute inset-x-0 h-[2px] bg-white/[0.07]"
+            style={{ animation: 'hum-drift 7s linear infinite' }}
+          />
 
+          {/* Tracking errors */}
+          {bars.map((b) => (
+            <div
+              key={b.id}
+              className="pointer-events-none absolute inset-x-0 bg-primary-soft/20"
+              style={{
+                top: `${b.top}%`,
+                height: b.h,
+                animation: 'crt-interference 420ms linear forwards',
+                mixBlendMode: 'screen',
+              }}
+            />
+          ))}
+
+          <div className="relative w-[min(430px,calc(100vw-3rem))] font-mono text-[12px] leading-[21px]">
+            {LINES.map((line, li) => {
+              const count = typed[li] ?? 0;
+              if (count === 0) return null;
+              const complete = count >= line.text.length;
+              return (
+                <p
+                  key={line.text}
+                  className={
+                    line.tone === 'head'
+                      ? 'mb-2 tracking-[0.12em] text-primary'
+                      : line.tone === 'ok'
+                        ? 'text-accent-green'
+                        : line.tone === 'pending'
+                          ? 'text-primary-soft'
+                          : 'text-on-surface-muted'
+                  }
+                  style={{
+                    // Phosphor bloom while the line is still landing.
+                    textShadow: complete
+                      ? 'none'
+                      : '0 0 9px rgba(255,182,140,0.75), 0 0 2px rgba(255,255,255,0.5)',
+                    transition: 'text-shadow 340ms ease-out',
+                  }}
+                >
+                  {line.text.slice(0, count)}
+                </p>
+              );
+            })}
+
+            {/* Cursor with its afterimage */}
+            <span className="relative mt-1 inline-block align-middle">
+              <motion.span
+                className="block h-[13px] w-[7px] bg-primary"
+                animate={{ opacity: [1, 1, 0, 0] }}
+                transition={{ duration: 0.9, repeat: Infinity, times: [0, 0.5, 0.5, 1] }}
+              />
+              <motion.span
+                className="absolute inset-0 block bg-primary/30 blur-[1px]"
+                animate={{ opacity: [0.45, 0.45, 0.22, 0] }}
+                transition={{ duration: 0.9, repeat: Infinity, times: [0, 0.5, 0.62, 1] }}
+              />
+            </span>
+          </div>
+
+          {/* Tube curvature */}
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                'radial-gradient(ellipse 78% 68% at 50% 50%, transparent 42%, rgba(0,0,0,0.55) 82%, rgba(0,0,0,0.9) 100%)',
+            }}
+          />
+
+          {/* Ready flash */}
+          <AnimatePresence>
+            {flash ? (
+              <motion.div
+                className="pointer-events-none absolute inset-0 bg-white"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0, 0.4, 0] }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.22 }}
+              />
+            ) : null}
+          </AnimatePresence>
         </motion.div>
       ) : null}
     </AnimatePresence>

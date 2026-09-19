@@ -70,7 +70,9 @@ function RelayRocker({ on, offline }) {
             x: on ? 14 : 0,
             backgroundColor: offline ? '#3a3d48' : on ? '#d97736' : '#2e313a',
           }}
-          transition={{ type: 'spring', stiffness: 620, damping: 32 }}
+          /* Underdamped on purpose: a rocker overshoots its detent and
+             settles back in two or three diminishing bounces. */
+          transition={{ type: 'spring', stiffness: 900, damping: 11, mass: 0.55 }}
         />
       </span>
       <span
@@ -84,7 +86,7 @@ function RelayRocker({ on, offline }) {
   );
 }
 
-function MetricWell({ label, value, unit, history, colour, tone, dimmed }) {
+function MetricWell({ label, value, unit, history, colour, tone, dimmed, scaleMax, tooltip, unitLabel }) {
   return (
     <div className="flex flex-col overflow-hidden border border-border-subtle bg-surface-subtle shadow-well">
       <div className="flex items-baseline justify-between px-3 pt-2.5">
@@ -97,7 +99,15 @@ function MetricWell({ label, value, unit, history, colour, tone, dimmed }) {
         </span>
       </div>
       <div className="mt-1.5 h-[26px]">
-        <SparklineChart values={history} color={colour} height={26} dimmed={dimmed} />
+        <SparklineChart
+          values={history}
+          color={colour}
+          height={26}
+          dimmed={dimmed}
+          scaleMax={scaleMax}
+          tooltip={tooltip}
+          unit={unitLabel}
+        />
       </div>
     </div>
   );
@@ -166,6 +176,31 @@ export default function DeviceCard({
 
   return (
     <div className="flex flex-col gap-3">
+      <div className="relative">
+      {/* Breathing glow, sized to the card but outside its overflow clip. */}
+      {!reduced ? (
+        <motion.div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 rounded"
+          animate={{
+            boxShadow: tripped
+              ? [
+                  '0 0 0 0 rgba(220,38,38,0)',
+                  '0 0 26px 2px rgba(220,38,38,0.32)',
+                  '0 0 0 0 rgba(220,38,38,0)',
+                ]
+              : [
+                  '0 0 0 0 rgba(217,119,54,0)',
+                  `0 0 ${14 + utilisationClamped * 0.22}px 0 rgba(217,119,54,${
+                    0.05 + (utilisationClamped / 100) * 0.22
+                  })`,
+                  '0 0 0 0 rgba(217,119,54,0)',
+                ],
+          }}
+          transition={{ duration: tripped ? 1.5 : 4.2, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      ) : null}
+
       <motion.article
         variants={chassis}
         initial="hidden"
@@ -173,8 +208,8 @@ export default function DeviceCard({
         className={`relative overflow-hidden rounded border bg-surface-card transition-colors ${
           tripped
             ? 'border-accent-red/35'
-            : offline
-              ? 'border-border-subtle opacity-90'
+            : unreachable
+              ? 'border-border-subtle opacity-90 saturate-[0.35]'
               : 'border-border-subtle hover:border-border-muted'
         }`}
       >
@@ -191,6 +226,30 @@ export default function DeviceCard({
             />
           ) : null}
         </AnimatePresence>
+
+        {/* Sensor grain on the panel face */}
+        {!reduced ? (
+          <div
+            className="pointer-events-none absolute inset-0 z-[1] opacity-[0.045] mix-blend-screen"
+            style={{
+              backgroundImage:
+                'repeating-conic-gradient(rgba(255,255,255,0.7) 0% 25%, transparent 0% 50%)',
+              backgroundSize: '3px 3px',
+              animation: 'static-noise 900ms steps(4, end) infinite',
+            }}
+          />
+        ) : null}
+
+        {/* Signal loss: the panel stops being a live picture */}
+        {unreachable && !reduced ? (
+          <div
+            className="pointer-events-none absolute inset-0 z-[2] opacity-40"
+            style={{
+              backgroundImage:
+                'repeating-linear-gradient(to bottom, rgba(150,153,166,0.09) 0px, rgba(150,153,166,0.09) 1px, transparent 1px, transparent 4px)',
+            }}
+          />
+        ) : null}
 
         {/* CRT boot sweep */}
         {phase === 'booting' && !reduced ? (
@@ -268,6 +327,9 @@ export default function DeviceCard({
               value={current == null ? DASH : fmt(current, 2)}
               unit="A"
               history={currentHistory}
+              scaleMax={threshold / 230}
+              tooltip
+              unitLabel="A"
               colour={tripped ? '#f87171' : '#d97736'}
               tone={currentTone}
               dimmed={unreachable}
@@ -350,6 +412,7 @@ export default function DeviceCard({
           </motion.div>
         </div>
       </motion.article>
+      </div>
 
       <motion.div
         variants={strip}
@@ -381,7 +444,13 @@ export default function DeviceCard({
         />
       </motion.div>
 
-      <DetailsPanel open={detailsOpen} onClose={() => setDetailsOpen(false)} device={device} />
+      <DetailsPanel
+        open={detailsOpen}
+        onClose={() => setDetailsOpen(false)}
+        device={device}
+        voltageHistory={voltageHistory}
+        currentHistory={currentHistory}
+      />
     </div>
   );
 }

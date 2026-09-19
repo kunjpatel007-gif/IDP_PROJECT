@@ -54,6 +54,8 @@ export default function ElectricField({ intensity = 0, overloaded = false, tripp
       y: Math.random() * h,
       life: 0,
       max: 90 + Math.random() * 190,
+      // Per-tracer hue jitter keeps the field from reading as one flat colour.
+      hue: (Math.random() - 0.5) * 42,
     });
 
     const resize = () => {
@@ -68,12 +70,27 @@ export default function ElectricField({ intensity = 0, overloaded = false, tripp
       ctx.fillStyle = '#121316';
       ctx.fillRect(0, 0, w, h);
 
-      const target = Math.round(Math.min(560, (w * h) / 3800));
+      const target = Math.round(Math.min(620, (w * h) / 3100));
       tracers = Array.from({ length: target }, spawn);
     };
 
     resize();
     window.addEventListener('resize', resize);
+
+    // Pointer acts as a repelling charge; the field relaxes when it leaves.
+    const pointer = { x: -9999, y: -9999, active: false };
+    const onMove = (e) => {
+      pointer.x = e.clientX;
+      pointer.y = e.clientY;
+      pointer.active = true;
+    };
+    const onLeave = () => {
+      pointer.active = false;
+      pointer.x = -9999;
+      pointer.y = -9999;
+    };
+    window.addEventListener('pointermove', onMove, { passive: true });
+    window.addEventListener('pointerleave', onLeave);
 
     const field = (px, py, time) => {
       let ex = 0;
@@ -88,6 +105,15 @@ export default function ElectricField({ intensity = 0, overloaded = false, tripp
         const d = Math.sqrt(d2);
         const q = c.q * (0.55 + 0.45 * Math.sin(time * 0.55 + c.phase));
         const k = (q * 26000) / (d2 * d);
+        ex += dx * k;
+        ey += dy * k;
+      }
+      if (pointer.active) {
+        const dx = px - pointer.x;
+        const dy = py - pointer.y;
+        const d2 = dx * dx + dy * dy + 1400;
+        const d = Math.sqrt(d2);
+        const k = 260000 / (d2 * d);
         ex += dx * k;
         ey += dy * k;
       }
@@ -125,8 +151,11 @@ export default function ElectricField({ intensity = 0, overloaded = false, tripp
         vx /= mag;
         vy /= mag;
 
-        if (s.overloaded || s.tripped) {
-          // The field loses coherence past the threshold.
+        if (s.tripped) {
+          // Tripped: the field stops being a field. Random walk with drift.
+          vx = vx * 0.25 + (Math.random() - 0.5) * 2.4;
+          vy = vy * 0.25 + (Math.random() - 0.5) * 2.4 - 0.35;
+        } else if (s.overloaded) {
           vx += (Math.random() - 0.5) * 1.5;
           vy += (Math.random() - 0.5) * 1.5;
         }
@@ -142,9 +171,9 @@ export default function ElectricField({ intensity = 0, overloaded = false, tripp
           cold[2] + (colour[2] - cold[2]) * strength,
         ];
 
-        ctx.strokeStyle = `rgba(${mixed[0] | 0}, ${mixed[1] | 0}, ${mixed[2] | 0}, ${
-          alpha * (0.35 + strength * 0.65)
-        })`;
+        ctx.strokeStyle = `rgba(${Math.max(0, Math.min(255, (mixed[0] + p.hue) | 0))}, ${
+          Math.max(0, Math.min(255, (mixed[1] + p.hue * 0.4) | 0))
+        }, ${mixed[2] | 0}, ${alpha * (0.35 + strength * 0.65)})`;
         ctx.beginPath();
         ctx.moveTo(p.x, p.y);
         ctx.lineTo(nx, ny);
@@ -159,14 +188,46 @@ export default function ElectricField({ intensity = 0, overloaded = false, tripp
         }
       }
 
+      // Constellation mesh — sampled, not exhaustive: an O(n²) pass over 600
+      // tracers would cost more than the field solve itself.
+      const linkDist = 74 + load * 34;
+      ctx.strokeStyle = `rgba(217, 119, 54, ${0.04 + load * 0.08})`;
+      for (let i = 0; i < tracers.length; i += 3) {
+        const a = tracers[i];
+        for (let j = i + 3; j < Math.min(i + 27, tracers.length); j += 3) {
+          const b = tracers[j];
+          const dx = a.x - b.x;
+          const dy = a.y - b.y;
+          if (dx * dx + dy * dy < linkDist * linkDist) {
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.stroke();
+          }
+        }
+      }
+
       frame = requestAnimationFrame(render);
     };
+
+    // A backgrounded tab should not be solving fields.
+    const onVisibility = () => {
+      cancelAnimationFrame(frame);
+      if (!document.hidden && !reduced) {
+        last = performance.now();
+        frame = requestAnimationFrame(render);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
 
     if (!reduced) frame = requestAnimationFrame(render);
 
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener('resize', resize);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerleave', onLeave);
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [reduced]);
 

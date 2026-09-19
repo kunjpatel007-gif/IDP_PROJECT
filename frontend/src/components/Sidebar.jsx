@@ -12,9 +12,9 @@ import { IconBell, IconChip, IconGrid, IconSliders, LogoMark } from '@/component
  */
 
 const NAV = [
-  { id: 'dashboard', label: 'Dashboard', Icon: IconGrid, active: true },
+  { id: 'dashboard', label: 'Dashboard', href: '/', Icon: IconGrid, active: true },
   { id: 'devices', label: 'Mock: Trip', href: '/?mock=trip', Icon: IconChip },
-  { id: 'alerts', label: 'Mock: Cycling', href: '/?mock=cycling', Icon: IconBell },
+  { id: 'alerts', label: 'Mock: Cycling', href: '/?mock=cycling', Icon: IconBell, badge: true },
   { id: 'settings', label: 'Mock: Offline', href: '/?mock=offline', Icon: IconSliders },
 ];
 
@@ -44,23 +44,27 @@ export default function Sidebar({ connection = 'connecting', alertCount = 0, fwV
           </div>
 
           <nav className="flex flex-col gap-1 px-3 pt-5" aria-label="Sections">
-            {NAV.map(({ id, label, Icon, active, badge, href }) => {
+            {NAV.map(({ id, label, href, Icon, active, badge }) => {
               const showBadge = badge && alertCount > 0;
               return (
                 <a
                   key={id}
-                  href={href || '#'}
+                  href={href}
                   aria-current={active ? 'page' : undefined}
-                  onClick={(e) => {
-                    if (active) e.preventDefault();
-                    if (!active && !href) e.preventDefault();
-                  }}
-                  className={`relative flex items-center justify-between rounded px-3.5 py-2.5 text-[13px] font-medium transition-colors ${
+                  className={`group relative flex items-center justify-between overflow-hidden rounded px-3.5 py-2.5 text-[13px] font-medium transition-colors ${
                     active
                       ? 'bg-surface-card text-primary'
                       : 'text-on-surface-muted hover:bg-surface-card/60 hover:text-on-surface'
                   }`}
                 >
+                  {/* Hover glow blooming behind the icon */}
+                  <span
+                    className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                    style={{
+                      background:
+                        'radial-gradient(circle at 16% 50%, rgba(217,119,54,0.2) 0%, transparent 62%)',
+                    }}
+                  />
                   {active ? (
                     <motion.span
                       layoutId="nav-marker"
@@ -92,43 +96,46 @@ export default function Sidebar({ connection = 'connecting', alertCount = 0, fwV
       </aside>
 
       {/* ── Handheld chassis bar ─────────────────────────────────── */}
-      <div className="sticky top-0 z-40 flex flex-col border-b border-border-subtle bg-surface-rail lg:hidden">
-        <header className="flex h-14 items-center justify-between px-4">
-          <div className="flex items-center gap-2.5">
-            <LogoMark />
-            <span className="font-display text-[14px] font-semibold tracking-tight text-on-surface">
-              SmartAdapter
+      <header className="sticky top-0 z-40 border-b border-border-subtle bg-surface-rail lg:hidden">
+      <div className="flex h-14 items-center justify-between px-4">
+        <div className="flex items-center gap-2.5">
+          <LogoMark />
+          <span className="font-display text-[14px] font-semibold tracking-tight text-on-surface">
+            SmartAdapter
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          {alertCount > 0 ? (
+            <span className="rounded bg-accent-red-bg px-1.5 py-0.5 font-mono text-[11px] font-medium text-accent-red">
+              {alertCount} alert
             </span>
-          </div>
-          <div className="flex items-center gap-3">
-            {alertCount > 0 ? (
-              <span className="rounded bg-accent-red-bg px-1.5 py-0.5 font-mono text-[11px] font-medium text-accent-red">
-                {alertCount} alert
-              </span>
-            ) : null}
-            <LinkTrace alive={alive} colour={alive ? '#22c55e' : '#f87171'} width={44} />
-            <StatusOrb status={link.status} size={7} />
-          </div>
-        </header>
-        <nav className="flex items-center gap-4 overflow-x-auto border-t border-border-subtle bg-surface px-4 py-2.5 hide-scrollbar">
-          {NAV.map(({ id, label, href, active }) => (
-            <a
-              key={id}
-              href={href || '#'}
-              aria-current={active ? 'page' : undefined}
-              onClick={(e) => {
-                if (active) e.preventDefault();
-                if (!active && !href) e.preventDefault();
-              }}
-              className={`shrink-0 whitespace-nowrap text-[12px] font-medium transition-colors ${
-                active ? 'text-primary' : 'text-on-surface-muted hover:text-on-surface'
-              }`}
-            >
-              {label}
-            </a>
-          ))}
-        </nav>
+          ) : null}
+          <LinkTrace alive={alive} colour={alive ? '#22c55e' : '#f87171'} width={44} />
+          <StatusOrb status={link.status} size={7} />
+        </div>
       </div>
+
+      {/* Scenario rail — the same destinations as the desktop nav */}
+      <nav
+        className="hide-scrollbar flex gap-2 overflow-x-auto border-t border-border-subtle px-4 py-2"
+        aria-label="Sections"
+      >
+        {NAV.map(({ id, label, href, active }) => (
+          <a
+            key={id}
+            href={href}
+            aria-current={active ? 'page' : undefined}
+            className={`flex h-10 shrink-0 items-center whitespace-nowrap rounded border px-3.5 text-[12px] font-medium transition-colors ${
+              active
+                ? 'border-primary/45 bg-surface-card text-primary'
+                : 'border-border-subtle text-on-surface-muted'
+            }`}
+          >
+            {label}
+          </a>
+        ))}
+      </nav>
+      </header>
     </>
   );
 }

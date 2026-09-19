@@ -23,7 +23,7 @@ import { fmt } from '@/lib/format';
  * measurement arriving, not from punctuation.
  */
 
-const PHASES = { collapse: 200, arc: 500, hold: 3700 };
+const PHASES = { collapse: 200, arc: 500, hold: 2700 };
 const TOTAL = PHASES.collapse + PHASES.arc + PHASES.hold;
 
 export default function TripOverlay({
@@ -84,14 +84,42 @@ export default function TripOverlay({
             transition={{ duration: 0.42, times: [0, 0.35, 1], ease: 'easeInOut' }}
           />
 
-          {/* The scan line itself, blown out white at the pinch */}
+          {/* The scan line, with the red/blue fringing of a misconverged tube */}
           {!reduced ? (
-            <motion.div
-              className="absolute inset-x-0 top-1/2 h-[2px] bg-white"
-              initial={{ opacity: 0, scaleX: 0.2 }}
-              animate={{ opacity: [0, 1, 0], scaleX: [0.2, 1, 1] }}
-              transition={{ duration: 0.4, times: [0, 0.35, 1] }}
-            />
+            <>
+              <motion.div
+                className="absolute inset-x-0 top-1/2 h-[2px] bg-white"
+                initial={{ opacity: 0, scaleX: 0.2 }}
+                animate={{ opacity: [0, 1, 0], scaleX: [0.2, 1, 1] }}
+                transition={{ duration: 0.4, times: [0, 0.35, 1] }}
+              />
+              <motion.div
+                className="absolute inset-x-0 top-1/2 h-[2px] bg-[#ff2d2d] mix-blend-screen"
+                style={{ marginTop: -2 }}
+                initial={{ opacity: 0, scaleX: 0.2 }}
+                animate={{ opacity: [0, 0.8, 0], scaleX: [0.2, 1, 1], x: [-3, -3, 0] }}
+                transition={{ duration: 0.4, times: [0, 0.35, 1] }}
+              />
+              <motion.div
+                className="absolute inset-x-0 top-1/2 h-[2px] bg-[#2d6bff] mix-blend-screen"
+                style={{ marginTop: 2 }}
+                initial={{ opacity: 0, scaleX: 0.2 }}
+                animate={{ opacity: [0, 0.8, 0], scaleX: [0.2, 1, 1], x: [3, 3, 0] }}
+                transition={{ duration: 0.4, times: [0, 0.35, 1] }}
+              />
+              {/* Horizontal tearing during the collapse */}
+              {phase === 'collapse'
+                ? Array.from({ length: 7 }, (_, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute inset-x-0 bg-accent-red/20 mix-blend-screen"
+                      style={{ top: `${8 + i * 13}%`, height: `${2 + Math.random() * 5}%` }}
+                      animate={{ x: [0, (Math.random() - 0.5) * 90, 0] }}
+                      transition={{ duration: 0.16, repeat: 1 }}
+                    />
+                  ))
+                : null}
+            </>
           ) : null}
 
           {phase === 'arc' ? <ArcDischarge active intensity={1} /> : null}
@@ -110,11 +138,27 @@ export default function TripOverlay({
             transition={{ duration: 0.4, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
           />
 
+          {/* Embers rising off the interruption */}
+          {phase === 'report' && !reduced
+            ? Array.from({ length: 22 }, (_, i) => (
+                <span
+                  key={i}
+                  className="ember pointer-events-none absolute bottom-[18%] h-[3px] w-[3px] rounded-full bg-[#ff9d5c]"
+                  style={{
+                    left: `${8 + Math.random() * 84}%`,
+                    '--ember-x': `${(Math.random() - 0.5) * 70}px`,
+                    '--ember-dur': `${2 + Math.random() * 2.4}s`,
+                    animationDelay: `${Math.random() * 1.6}s`,
+                  }}
+                />
+              ))
+            : null}
+
           <AnimatePresence>
             {phase === 'report' ? (
               <motion.div
                 key="report"
-                className="relative flex w-full max-w-[860px] flex-col items-stretch"
+                className="aftershock relative flex w-full max-w-[860px] flex-col items-stretch"
                 initial={reduced ? { opacity: 1 } : { opacity: 0, y: 18, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ type: 'spring', stiffness: 190, damping: 22 }}

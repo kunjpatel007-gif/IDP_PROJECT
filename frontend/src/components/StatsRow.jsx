@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import StatusOrb from '@/components/StatusOrb';
 import SparklineChart from '@/components/SparklineChart';
@@ -31,7 +32,7 @@ function Well({ label, address, children, footer, alert = false, className = '' 
         />
       ) : null}
 
-      <div className="relative flex h-7 items-center justify-between border-b border-border-subtle px-3.5">
+      <div className="holo-shimmer relative flex h-7 items-center justify-between border-b border-border-subtle px-3.5">
         <span className="truncate whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.05em] text-on-surface-muted sm:text-[11px]">
           {label}
         </span>
@@ -47,7 +48,35 @@ function Well({ label, address, children, footer, alert = false, className = '' 
 function Counter({ value, className, pad = 2 }) {
   const animated = useAnimatedNumber(value, { stiffness: 170, damping: 24, precision: 0.02 });
   const rounded = Math.round(animated);
-  return <span className={className}>{String(rounded).padStart(pad, '0')}</span>;
+
+  // Crossing a state boundary rings outward from the numeral.
+  const [pulse, setPulse] = useState(false);
+  const [ripple, setRipple] = useState(0);
+  const prev = useRef(rounded);
+
+  useEffect(() => {
+    if (prev.current === rounded) return undefined;
+    prev.current = rounded;
+    setPulse(true);
+    setRipple((r) => r + 1);
+    const t = setTimeout(() => setPulse(false), 440);
+    return () => clearTimeout(t);
+  }, [rounded]);
+
+  return (
+    <span className="relative inline-flex">
+      {ripple > 0 ? (
+        <span
+          key={ripple}
+          aria-hidden="true"
+          className="ripple-expand pointer-events-none absolute inset-0 rounded-full border border-primary/45"
+        />
+      ) : null}
+      <span className={`${className} ${pulse ? 'data-pulse' : ''}`}>
+        {String(rounded).padStart(pad, '0')}
+      </span>
+    </span>
+  );
 }
 
 export default function StatsRow({ device, powerHistory }) {
@@ -150,7 +179,17 @@ export default function StatsRow({ device, powerHistory }) {
           {tripped ? (
             <motion.span
               initial={{ opacity: 0, x: 6 }}
-              animate={{ opacity: 1, x: 0 }}
+              animate={{
+                opacity: 1,
+                x: 0,
+                scale: [1, 1.02, 1],
+                boxShadow: [
+                  '0 0 0 0 rgba(220,38,38,0)',
+                  '0 0 14px 2px rgba(220,38,38,0.45)',
+                  '0 0 0 0 rgba(220,38,38,0)',
+                ],
+              }}
+              transition={{ duration: 1.7, repeat: Infinity, ease: 'easeInOut' }}
               className="rounded bg-accent-red-bg px-2 py-0.5 font-mono text-[11px] text-accent-red"
             >
               breaker open

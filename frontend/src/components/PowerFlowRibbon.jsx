@@ -31,6 +31,7 @@ export default function PowerFlowRibbon({
   const live = useRef({ current, relayOn, tripped, energised });
   live.current = { current, relayOn, tripped, energised };
   const arc = useRef(0);
+  const sparks = useRef([]);
   const wasClosed = useRef(relayOn);
 
   useEffect(() => {
@@ -146,6 +147,39 @@ export default function PowerFlowRibbon({
         next.push(p);
       }
       particles.current = next;
+
+      // ── Collision sparks at the junction ────────────────────────
+      if (closed && amps > 0.2 && Math.random() < Math.min(0.35, amps * 0.045)) {
+        sparks.current.push({
+          x: gate + (Math.random() - 0.5) * 9,
+          y: height / 2 + (Math.random() - 0.5) * 12,
+          life: 1,
+          r: 0.8 + Math.random() * 1.6,
+        });
+      }
+      sparks.current = sparks.current.filter((sp) => {
+        sp.life -= dt * 4.5;
+        if (sp.life <= 0) return false;
+        ctx.fillStyle = `rgba(255, 228, 200, ${sp.life})`;
+        ctx.beginPath();
+        ctx.arc(sp.x, sp.y, sp.r * sp.life, 0, Math.PI * 2);
+        ctx.fill();
+        return true;
+      });
+
+      // ── Arc particles bridging an open, faulted gap ─────────────
+      if (s.tripped) {
+        ctx.strokeStyle = `rgba(255, 190, 170, ${0.25 + Math.random() * 0.5})`;
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        let ax = gate - 7;
+        ctx.moveTo(ax, height / 2 + (Math.random() - 0.5) * 6);
+        while (ax < gate + 7) {
+          ax += 2.5;
+          ctx.lineTo(ax, height / 2 + (Math.random() - 0.5) * 11);
+        }
+        ctx.stroke();
+      }
 
       // ── Relay contact ───────────────────────────────────────────
       const gapTop = height * 0.18;

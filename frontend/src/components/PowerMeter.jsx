@@ -20,6 +20,7 @@ function RollingDigit({ digit, direction, delay, reduced }) {
   const [pos, setPos] = useState(() => HOME + digit);
   const [animating, setAnimating] = useState(true);
   const [rolling, setRolling] = useState(false);
+  const [detent, setDetent] = useState(false);
 
   const posRef = useRef(HOME + digit);
   const prevDigit = useRef(digit);
@@ -53,7 +54,12 @@ function RollingDigit({ digit, direction, delay, reduced }) {
     setRolling(true);
 
     clearTimeout(rollTimer.current);
-    rollTimer.current = setTimeout(() => setRolling(false), ROLL_MS + delay);
+    rollTimer.current = setTimeout(() => {
+      setRolling(false);
+      // Click into the detent, the way a mechanical counter lands.
+      setDetent(true);
+      setTimeout(() => setDetent(false), 140);
+    }, ROLL_MS + delay);
 
     clearTimeout(snapTimer.current);
     snapTimer.current = setTimeout(() => {
@@ -72,7 +78,7 @@ function RollingDigit({ digit, direction, delay, reduced }) {
   }, [digit, direction, delay, reduced]);
 
   return (
-    <span className="rd-slot">
+    <span className={`rd-slot${detent ? ' digit-detent' : ''}`}>
       <span
         className={`rd-strip${rolling ? ' is-rolling' : ''}`}
         style={{

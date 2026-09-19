@@ -73,18 +73,36 @@ function ToastViewport({ toasts, onDismiss }) {
   return (
     <div className="pointer-events-none fixed right-5 top-5 z-[70] flex w-[min(340px,calc(100vw-2.5rem))] flex-col gap-2">
       <AnimatePresence initial={false}>
-        {toasts.map((toast) => {
+        {toasts.map((toast, index) => {
           const tone = TONES[toast.tone] ?? TONES.info;
+          const depth = toasts.length - 1 - index;
           return (
             <motion.div
               key={toast.id}
               layout={!reduced}
-              initial={reduced ? { opacity: 1 } : { opacity: 0, x: 24, scale: 0.97 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
+              initial={
+                reduced ? { opacity: 1 } : { opacity: 0, x: 24, scale: 0.97, filter: 'blur(6px)' }
+              }
+              animate={{
+                opacity: 1 - depth * 0.18,
+                x: 0,
+                scale: 1 - depth * 0.03,
+                filter: 'blur(0px)',
+              }}
               exit={reduced ? { opacity: 0 } : { opacity: 0, x: 24, scale: 0.97 }}
-              transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-              className={`pointer-events-auto relative overflow-hidden rounded border bg-surface-card shadow-flyout ${tone.border}`}
+              transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+              className={`pointer-events-auto relative overflow-hidden rounded border bg-surface-card shadow-flyout ${
+                toast.tone === 'error' && !reduced ? 'toast-shake' : ''
+              } ${tone.border}`}
             >
+              {toast.tone === 'ok' ? (
+                <motion.span
+                  className="absolute inset-y-0 left-0 w-[3px] bg-accent-green"
+                  initial={{ opacity: 0, scaleY: 0 }}
+                  animate={{ opacity: [0, 1, 0.45], scaleY: 1 }}
+                  transition={{ duration: 0.5 }}
+                />
+              ) : null}
               <div className="flex items-start gap-2.5 px-3 py-2.5">
                 <span className={`mt-[1px] ${tone.text}`}>
                   {toast.tone === 'error' ? (

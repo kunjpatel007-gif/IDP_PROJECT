@@ -53,6 +53,10 @@ export default function WaveformBar({
   // Amplitude eases toward its target so a step change in load looks like a
   // physical response, not a jump cut.
   const eased = useRef(pct);
+  // Last drawn polyline, kept so the trip edge has something to break apart.
+  const lastTrace = useRef([]);
+  const shards = useRef([]);
+  const wasTripped = useRef(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -122,6 +126,57 @@ export default function WaveformBar({
       const colour = mix(AMBER, CRIMSON, (load - 55) / 45);
 
       // ── The trace ────────────────────────────────────────────────
+      // ── Shatter on the trip edge ────────────────────────────────
+      const nowTripped = state.overloaded || live.current.tripped === true;
+      if (nowTripped && !wasTripped.current && lastTrace.current.length > 8 && !reduced) {
+        const src = lastTrace.current;
+        const pieces = 22;
+        const per = Math.max(2, Math.floor(src.length / pieces));
+        shards.current = [];
+        for (let i = 0; i < src.length; i += per) {
+          const slice = src.slice(i, i + per);
+          if (slice.length < 2) continue;
+          const cx = slice.reduce((a, pt) => a + pt[0], 0) / slice.length;
+          const cy = slice.reduce((a, pt) => a + pt[1], 0) / slice.length;
+          shards.current.push({
+            pts: slice.map(([px, py]) => [px - cx, py - cy]),
+            x: cx,
+            y: cy,
+            vx: (Math.random() - 0.5) * 70,
+            vy: -30 - Math.random() * 60,
+            rot: 0,
+            rotV: (Math.random() - 0.5) * 7,
+            life: 1,
+          });
+        }
+      }
+      wasTripped.current = nowTripped;
+
+      // Fragments fall, spin and fade. Gravity is the only force acting.
+      if (shards.current.length) {
+        shards.current = shards.current.filter((sh) => {
+          sh.vy += 150 * dt;
+          sh.x += sh.vx * dt;
+          sh.y += sh.vy * dt;
+          sh.rot += sh.rotV * dt;
+          sh.life -= dt * 0.36;
+          if (sh.life <= 0) return false;
+
+          ctx.save();
+          ctx.translate(sh.x, sh.y);
+          ctx.rotate(sh.rot);
+          ctx.strokeStyle = `rgba(248, 113, 113, ${sh.life})`;
+          ctx.lineWidth = 1.3;
+          ctx.beginPath();
+          sh.pts.forEach(([px, py], i) => (i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py)));
+          ctx.stroke();
+          ctx.restore();
+          return true;
+        });
+      }
+
+      const clips = [];
+      const captured = [];
       ctx.beginPath();
       for (let x = 0; x <= travelled; x += 1) {
         const k = (x / wavelength) * Math.PI * 2;
@@ -132,19 +187,47 @@ export default function WaveformBar({
         // Second harmonic: a pure sine reads synthetic, mains never is.
         y += Math.sin(k * 2.17 - phase * 1.31) * amplitude * 0.16 * envelope;
 
+        // Past ~70% the supply starts looking distorted: odd harmonics grow
+        // in, the way a real circuit near its limit fills with 3rd and 5th.
+        if (load > 70) {
+          const thd = Math.min(1, (load - 70) / 30);
+          y += Math.sin(k * 3 - phase * 3) * amplitude * 0.3 * thd * envelope;
+          y += Math.sin(k * 5 - phase * 5) * amplitude * 0.17 * thd * envelope;
+        }
+
         if (state.overloaded) {
           y += hashNoise(x * 0.9, phase * 3) * usable * 0.72;
         }
 
-        const py = mid + y;
+        // Hard clip against the rails past 90%, with the flat tops a real
+        // saturating waveform gets — and a bright artefact at each clip point.
+        const ceiling = usable * 0.94;
+        let py = mid + y;
+        if (load > 90 && Math.abs(y) > ceiling) {
+          py = mid + Math.sign(y) * ceiling;
+          clips.push([x, py]);
+        }
         if (x === 0) ctx.moveTo(x, py);
         else ctx.lineTo(x, py);
+        if (x % 4 === 0) captured.push([x, py]);
       }
+      lastTrace.current = captured;
+
+      // Bloom underneath, sharp trace on top.
+      ctx.strokeStyle = rgba(colour, 0.2);
+      ctx.lineWidth = (state.overloaded ? 1.4 : 1.25) + 3.5;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
 
       ctx.strokeStyle = rgba(colour, state.overloaded ? 0.95 : 0.9);
       ctx.lineWidth = state.overloaded ? 1.4 : 1.25;
-      ctx.lineJoin = 'round';
       ctx.stroke();
+
+      // Clip artefacts
+      for (const [cx, cy] of clips) {
+        ctx.fillStyle = `rgba(255, 236, 220, ${0.5 + Math.random() * 0.4})`;
+        ctx.fillRect(cx - 0.5, cy - 1, 1.5, 2);
+      }
 
       // ── Phosphor fill under the trace ────────────────────────────
       ctx.lineTo(travelled, mid);

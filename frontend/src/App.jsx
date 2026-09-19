@@ -6,6 +6,7 @@ import ScrambleText from '@/components/ScrambleText';
 import CommandPipeline from '@/components/CommandPipeline';
 import DeviceCard from '@/components/DeviceCard';
 import ElectricField from '@/components/ElectricField';
+import ParticleBackground from '@/components/ParticleBackground';
 import LiveDataBadge from '@/components/LiveDataBadge';
 import Sidebar from '@/components/Sidebar';
 import StatsRow from '@/components/StatsRow';
@@ -83,6 +84,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-surface text-on-surface">
+      <ParticleBackground
+        intensity={device.unreachable ? 0 : Math.min(1, device.utilisation / 100)}
+        scatter={device.tripped}
+      />
+
       <ElectricField
         intensity={device.unreachable ? 0 : Math.min(1, device.utilisation / 100)}
         overloaded={device.overloaded}

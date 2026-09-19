@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react';
+
 /**
  * Annunciator LED.
  *
@@ -47,16 +49,38 @@ const SPEC = {
 
 export default function StatusOrb({ status = 'offline', size = 8, className = '' }) {
   const spec = SPEC[status] ?? SPEC.offline;
+  const [inrush, setInrush] = useState(false);
+  const prev = useRef(status);
+
+  // A real lamp overshoots on switch-on before the filament settles.
+  useEffect(() => {
+    if (prev.current === status) return undefined;
+    prev.current = status;
+    setInrush(true);
+    const t = setTimeout(() => setInrush(false), 400);
+    return () => clearTimeout(t);
+  }, [status]);
 
   return (
     <span
-      className={`inline-block shrink-0 rounded-full ${spec.className} ${className}`}
+      className={`relative inline-block shrink-0 rounded-full ${spec.className} ${
+        inrush ? 'orb-inrush' : ''
+      } ${className}`}
       style={{
         width: size,
         height: size,
         background: `radial-gradient(circle at 32% 28%, ${spec.core} 0%, ${spec.core} 34%, ${spec.edge} 100%)`,
         animation: spec.animation,
       }}
-    />
+    >
+      {/* Convex glass over the die, and the highlight it catches at 10 o'clock. */}
+      <span
+        className="pointer-events-none absolute inset-0 rounded-full"
+        style={{
+          background:
+            'radial-gradient(circle at 30% 24%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.12) 26%, transparent 52%)',
+        }}
+      />
+    </span>
   );
 }
