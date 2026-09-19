@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useMotionValue, useSpring } from 'framer-motion';
 import { IconCheck } from '@/components/Icons';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
@@ -87,6 +87,25 @@ export default function ControlButton({
   const [glyphPhase, setGlyphPhase] = useState(null);
   const [tipOpen, setTipOpen] = useState(false);
   const [ripple, setRipple] = useState(null);
+
+  // Magnetic pull: the actuator drifts a couple of pixels toward the cursor,
+  // enough that it feels like it wants to be pressed, not enough to move the
+  // hit area out from under the pointer.
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const sx = useSpring(mx, { stiffness: 300, damping: 20, mass: 0.4 });
+  const sy = useSpring(my, { stiffness: 300, damping: 20, mass: 0.4 });
+
+  const onMagnet = (event) => {
+    if (reduced || event.pointerType === 'touch') return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    mx.set((event.clientX - (rect.left + rect.width / 2)) * 0.16);
+    my.set((event.clientY - (rect.top + rect.height / 2)) * 0.22);
+  };
+  const releaseMagnet = () => {
+    mx.set(0);
+    my.set(0);
+  };
   const timers = useRef([]);
 
   useEffect(
@@ -141,14 +160,19 @@ export default function ControlButton({
 
   return (
     <div className="relative">
-      <button
+      <motion.button
         type="button"
+        style={{ x: sx, y: sy }}
+        onPointerMove={onMagnet}
         onClick={handleClick}
         disabled={disabled || busy}
         aria-describedby={tipOpen ? tooltipId : undefined}
         aria-busy={busy}
         onMouseEnter={() => setTipOpen(true)}
-        onMouseLeave={() => setTipOpen(false)}
+        onMouseLeave={() => {
+          setTipOpen(false);
+          releaseMagnet();
+        }}
         onFocus={() => setTipOpen(true)}
         onBlur={() => setTipOpen(false)}
         className={`actuator relative isolate inline-flex h-10 items-center gap-2 overflow-hidden rounded border px-3.5 font-body text-[13px] font-medium shadow-[0_2px_0_0_rgba(0,0,0,0.45)] active:shadow-none lg:h-8 lg:px-3 lg:text-[12px] ${palette.base} ${className}`}
@@ -192,7 +216,7 @@ export default function ControlButton({
           )}
         </span>
         <span className="tabular-nums">{label}</span>
-      </button>
+      </motion.button>
 
       <AnimatePresence>
         {tipOpen && !busy ? (

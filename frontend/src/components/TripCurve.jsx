@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { clamp } from '@/lib/format';
 
@@ -49,6 +49,7 @@ const yOf = (t) =>
 
 export default function TripCurve({ current = 0, threshold = 1500, voltage = 230, powerFactor = 0.95, energised = true }) {
   const reduced = useReducedMotion();
+  const [probe, setProbe] = useState(null);
 
   const { curve, pickup, multiple, predicted } = useMemo(() => {
     const V = Number(voltage) || 230;
@@ -83,7 +84,24 @@ export default function TripCurve({ current = 0, threshold = 1500, voltage = 230
       </div>
 
       <div className="p-2">
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Inverse time current characteristic">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          className="w-full cursor-crosshair"
+          role="img"
+          aria-label="Inverse time current characteristic"
+          onPointerMove={(event) => {
+            if (event.pointerType === 'touch') return;
+            const rect = event.currentTarget.getBoundingClientRect();
+            const sx = ((event.clientX - rect.left) / rect.width) * W;
+            if (sx < PAD.l || sx > W - PAD.r) return setProbe(null);
+            // Invert the log mapping to recover the current multiple.
+            const frac = (sx - PAD.l) / (W - PAD.l - PAD.r);
+            const m =
+              10 ** (Math.log10(M_MIN) + frac * (Math.log10(M_MAX) - Math.log10(M_MIN)));
+            return setProbe({ x: sx, m });
+          }}
+          onPointerLeave={() => setProbe(null)}
+        >
           {/* Decade grid */}
           {[0.4, 1, 2, 5, 10, 20].map((m) => (
             <g key={`x${m}`}>
@@ -133,6 +151,52 @@ export default function TripCurve({ current = 0, threshold = 1500, voltage = 230
             ) : null}
             <circle r="3.5" fill={accent} />
           </motion.g>
+
+          {/* Coordination probe: read the operate time anywhere on the curve */}
+          {probe ? (
+            <g pointerEvents="none">
+              <line
+                x1={probe.x}
+                y1={PAD.t}
+                x2={probe.x}
+                y2={H - PAD.b}
+                stroke="#ffb68c"
+                strokeOpacity="0.7"
+                strokeWidth="1"
+                strokeDasharray="3 3"
+              />
+              {probe.m > 1 ? (
+                <circle cx={probe.x} cy={yOf(tripTime(probe.m))} r="3" fill="#ffb68c" />
+              ) : null}
+              <rect
+                x={Math.min(probe.x + 5, W - 74)}
+                y={PAD.t + 2}
+                width="68"
+                height="26"
+                fill="#0d0e11"
+                fillOpacity="0.93"
+                stroke="#353742"
+              />
+              <text
+                x={Math.min(probe.x + 10, W - 69)}
+                y={PAD.t + 13}
+                fill="#e4e5ea"
+                fontSize="8"
+                fontFamily="JetBrains Mono, monospace"
+              >
+                {probe.m.toFixed(2)}× pickup
+              </text>
+              <text
+                x={Math.min(probe.x + 10, W - 69)}
+                y={PAD.t + 23}
+                fill={probe.m > 1 ? '#ffb68c' : '#22c55e'}
+                fontSize="8"
+                fontFamily="JetBrains Mono, monospace"
+              >
+                {probe.m > 1 ? `${tripTime(probe.m).toFixed(2)} s` : 'no operate'}
+              </text>
+            </g>
+          ) : null}
 
           <text x={PAD.l} y={H - 3} fill="#696c7a" fontSize="7" fontFamily="JetBrains Mono, monospace">
             × pickup

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import HoverPanel from '@/components/HoverPanel';
 import StatusOrb from '@/components/StatusOrb';
 import SparklineChart from '@/components/SparklineChart';
 import { useAnimatedNumber } from '@/hooks/useAnimatedNumber';
@@ -16,8 +17,11 @@ import { scaleWatts } from '@/lib/format';
 
 function Well({ label, address, children, footer, alert = false, className = '' }) {
   return (
-    <div
-      className={`relative flex flex-col justify-between overflow-hidden rounded border bg-surface-card ${
+    <HoverPanel
+      tilt={5}
+      glowColor={alert ? '248, 113, 113' : '217, 119, 54'}
+      glowSize={220}
+      className={`flex flex-col justify-between overflow-hidden rounded border bg-surface-card ${
         alert ? 'border-accent-red/35' : 'border-border-subtle'
       } ${className}`}
     >
@@ -41,7 +45,7 @@ function Well({ label, address, children, footer, alert = false, className = '' 
 
       <div className="relative flex flex-1 flex-col justify-end px-3.5 pb-3 pt-4">{children}</div>
       {footer}
-    </div>
+    </HoverPanel>
   );
 }
 

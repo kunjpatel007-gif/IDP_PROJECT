@@ -32,6 +32,9 @@ export default function PhasorDiagram({
 }) {
   const reduced = useReducedMotion();
   const [theta, setTheta] = useState(0);
+  const [held, setHeld] = useState(false);
+  const heldRef = useRef(false);
+  heldRef.current = held;
   const raf = useRef(null);
 
   useEffect(() => {
@@ -40,7 +43,8 @@ export default function PhasorDiagram({
     const tick = (ts) => {
       const dt = Math.min((ts - last) / 1000, 1 / 20);
       last = ts;
-      setTheta((t) => (t + dt * 0.55 * Math.PI * 2) % (Math.PI * 2));
+      // Hovering freezes the frame so the angle can actually be read.
+      if (!heldRef.current) setTheta((t) => (t + dt * 0.55 * Math.PI * 2) % (Math.PI * 2));
       raf.current = requestAnimationFrame(tick);
     };
     raf.current = requestAnimationFrame(tick);
@@ -77,11 +81,18 @@ export default function PhasorDiagram({
   const qLen = Q * scale;
 
   return (
-    <div className="flex flex-col overflow-hidden border border-border-subtle bg-surface-card">
+    <div
+      className="flex flex-col overflow-hidden border border-border-subtle bg-surface-card"
+      onPointerEnter={(e) => e.pointerType !== 'touch' && setHeld(true)}
+      onPointerLeave={() => setHeld(false)}
+    >
       <div className="flex h-7 items-center justify-between border-b border-border-subtle px-3">
         <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-on-surface-muted">
           Phasors
         </span>
+        {held ? (
+          <span className="font-mono text-[10px] tracking-[0.06em] text-primary-soft">HOLD</span>
+        ) : null}
       </div>
 
       <div className="flex flex-col items-center gap-1 p-2.5 sm:gap-2 sm:p-3">

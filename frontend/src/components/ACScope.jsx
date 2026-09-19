@@ -42,6 +42,10 @@ export default function ACScope({
 
   // Amplitudes ease so a step change in load looks like a physical response.
   const eased = useRef({ v: 0, i: 0, phi: 0 });
+  // Cursor position lives in a ref and is drawn by the loop, so the readout
+  // stays live while the beam sweeps under it instead of freezing the moment
+  // the mouse stops moving.
+  const probe = useRef({ x: null });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -202,8 +206,76 @@ export default function ACScope({
         !reduced
       );
 
+      // ── Measurement cursor ──────────────────────────────────────
+      const cx = probe.current.x;
+      if (cx != null && cx >= 0 && cx <= width) {
+        const k = cx * omega + sweep;
+        const vInst = (s.voltage ?? 0) * Math.SQRT2 * Math.sin(k);
+        const iInst = (s.current ?? 0) * Math.SQRT2 * Math.sin(k - eased.current.phi);
+        const tMs = (cx / width) * (CYCLES / (s.frequency || 50)) * 1000;
+
+        ctx.save();
+        ctx.setLineDash([3, 3]);
+        ctx.strokeStyle = 'rgba(255, 182, 140, 0.75)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(Math.round(cx) + 0.5, 0);
+        ctx.lineTo(Math.round(cx) + 0.5, height);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Markers where the cursor crosses each trace.
+        const vy = mid - Math.sin(k) * eased.current.v * usable;
+        const iy = mid - Math.sin(k - eased.current.phi) * eased.current.i * usable;
+        ctx.fillStyle = 'rgba(150, 153, 166, 0.95)';
+        ctx.beginPath();
+        ctx.arc(cx, vy, 2.6, 0, Math.PI * 2);
+        ctx.fill();
+        if (eased.current.i > 0.004) {
+          ctx.fillStyle = s.tripped ? '#f87171' : '#d97736';
+          ctx.beginPath();
+          ctx.arc(cx, iy, 2.6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Readout, flipped to whichever side has room.
+        const lines = [
+          `t ${tMs.toFixed(1)} ms`,
+          `v ${vInst.toFixed(0)} V`,
+          `i ${iInst.toFixed(2)} A`,
+        ];
+        ctx.font = '10px "JetBrains Mono", ui-monospace, monospace';
+        const boxW = 74;
+        const boxH = lines.length * 13 + 8;
+        const bx = cx + boxW + 10 > width ? cx - boxW - 8 : cx + 8;
+        ctx.fillStyle = 'rgba(13, 14, 17, 0.92)';
+        ctx.fillRect(bx, 6, boxW, boxH);
+        ctx.strokeStyle = 'rgba(53, 55, 66, 1)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(bx + 0.5, 6.5, boxW - 1, boxH - 1);
+        lines.forEach((line, li) => {
+          ctx.fillStyle = li === 2 ? (s.tripped ? '#f87171' : '#d97736') : '#e4e5ea';
+          ctx.fillText(line, bx + 6, 20 + li * 13);
+        });
+        ctx.restore();
+      }
+
       if (!reduced) frame = requestAnimationFrame(render);
     };
+
+    // A stopped cursor must still update, so keep the loop alive on hover.
+    const onProbe = (event) => {
+      if (event.pointerType === 'touch') return;
+      const rect = wrap.getBoundingClientRect();
+      probe.current.x = event.clientX - rect.left;
+      if (reduced) render(performance.now());
+    };
+    const clearProbe = () => {
+      probe.current.x = null;
+      if (reduced) render(performance.now());
+    };
+    wrap.addEventListener('pointermove', onProbe);
+    wrap.addEventListener('pointerleave', clearProbe);
 
     if (reduced) render(performance.now());
     else frame = requestAnimationFrame(render);
@@ -211,6 +283,8 @@ export default function ACScope({
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
+      wrap.removeEventListener('pointermove', onProbe);
+      wrap.removeEventListener('pointerleave', clearProbe);
     };
   }, [height, reduced]);
 
@@ -228,7 +302,7 @@ export default function ACScope({
         </span>
       </div>
 
-      <div ref={wrapRef} className="relative overflow-hidden bg-surface-subtle shadow-well" style={{ height }}>
+      <div ref={wrapRef} className="relative cursor-crosshair overflow-hidden bg-surface-subtle shadow-well" style={{ height }}>
         <canvas ref={canvasRef} className="block" />
         {/* Glass: a faint diagonal sheen across the tube face. */}
         <div

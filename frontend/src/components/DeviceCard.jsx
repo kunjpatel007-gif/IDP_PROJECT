@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import ACScope from '@/components/ACScope';
 import ControlButton from '@/components/ControlButton';
+import HoverPanel from '@/components/HoverPanel';
 import DetailsPanel from '@/components/DetailsPanel';
 import PhasorDiagram from '@/components/PhasorDiagram';
 import PowerFlowRibbon from '@/components/PowerFlowRibbon';
@@ -88,7 +89,7 @@ function RelayRocker({ on, offline }) {
 
 function MetricWell({ label, value, unit, history, colour, tone, dimmed, scaleMax, tooltip, unitLabel }) {
   return (
-    <div className="flex flex-col overflow-hidden border border-border-subtle bg-surface-subtle shadow-well">
+    <HoverPanel tilt={0} lift={false} glowSize={200} className="flex flex-col overflow-hidden border border-border-subtle bg-surface-subtle shadow-well">
       <div className="flex items-baseline justify-between px-3 pt-2.5">
         <span className="font-mono text-[10px] uppercase tracking-[0.05em] text-on-surface-subtle">
           {label}
@@ -109,7 +110,7 @@ function MetricWell({ label, value, unit, history, colour, tone, dimmed, scaleMa
           unit={unitLabel}
         />
       </div>
-    </div>
+    </HoverPanel>
   );
 }
 
@@ -420,28 +421,28 @@ export default function DeviceCard({
         animate={booted ? 'show' : 'hidden'}
         className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)_minmax(0,1fr)]"
       >
-        <ACScope
+        <HoverPanel className="min-w-0"><ACScope
           voltage={voltage ?? 0}
           current={current ?? 0}
           powerFactor={powerFactor ?? 1}
           frequency={frequency}
           energised={!unreachable}
           tripped={tripped}
-        />
-        <PhasorDiagram
+        /></HoverPanel>
+        <HoverPanel className="min-w-0"><PhasorDiagram
           voltage={voltage ?? 0}
           current={current ?? 0}
           powerFactor={powerFactor ?? 1}
           energised={!unreachable}
           tripped={tripped}
-        />
-        <TripCurve
+        /></HoverPanel>
+        <HoverPanel className="min-w-0"><TripCurve
           current={current ?? 0}
           threshold={threshold}
           voltage={voltage ?? 230}
           powerFactor={powerFactor ?? 0.95}
           energised={!unreachable}
-        />
+        /></HoverPanel>
       </motion.div>
 
       <DetailsPanel
