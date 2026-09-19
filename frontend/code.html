@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="web_dashboard" name="shell-type"/>
+<title>SmartAdapter Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+      body { overscroll-behavior: none; }
+    }
+    ::-webkit-scrollbar { display: none; }
+  </style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface": "#121316",
+            "surface-subtle": "#16171c",
+            "surface-card": "#1a1b20",
+            "surface-card-hover": "#212228",
+            "border-subtle": "#292a32",
+            "border-muted": "#353742",
+            "primary": "#d97736",
+            "primary-soft": "#ffb68c",
+            "on-surface": "#e4e5ea",
+            "on-surface-muted": "#9699a6",
+            "on-surface-subtle": "#696c7a",
+            "accent-green": "#22c55e",
+            "accent-red": "#f87171",
+            "accent-red-bg": "rgba(239, 68, 68, 0.12)",
+          },
+          fontFamily: {
+            body: ["Inter", "sans-serif"],
+            display: ["Chivo", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased selection:bg-primary/20 selection:text-primary">
+<!-- Minimal Sidebar -->
+<aside class="fixed left-0 top-0 h-screen w-60 bg-[#141519] border-r border-border-subtle flex flex-col justify-between select-none z-40">
+<div class="flex flex-col">
+<!-- Logo Container -->
+<div class="h-16 px-6 flex items-center border-b border-border-subtle/50">
+<img alt="SmartAdapter" class="h-6 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1WSBn2RXb6NqQpKoxe0PfC2WTshi0ykdVNDjIesaLcBUQA_GvruaXR4MAaE91QWKdlH9fIszAwcxb562hhRvTEVx46gHlvjxGGXqJPcuhUkp2BbmiC3X8deiMJjNaGxyPiE3SK_lXZiBeZJCpyWf5jO_5vi_qxN_Lo_wSo2Q2oLOkTZnzvGX_njayhnLB06tGuPWyTjMF1tlMtoHyj3UioaJCQbvW5xsRtlIL2a_kHf"/>
+</div>
+<!-- Navigation -->
+<nav class="flex flex-col gap-1 px-3 pt-6">
+<a class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-md bg-surface-card text-primary font-medium text-[13px] transition-colors" href="#">
+<span class="material-symbols-outlined text-[19px]">grid_view</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-md text-on-surface-muted hover:text-on-surface hover:bg-surface-card/60 font-medium text-[13px] transition-colors" href="#">
+<span class="material-symbols-outlined text-[19px]">memory</span>
+<span>Devices</span>
+</a>
+<a class="flex items-center justify-between px-3.5 py-2.5 rounded-md text-on-surface-muted hover:text-on-surface hover:bg-surface-card/60 font-medium text-[13px] transition-colors" href="#">
+<div class="flex items-center gap-3.5">
+<span class="material-symbols-outlined text-[19px]">notifications</span>
+<span>Alerts</span>
+</div>
+<span class="px-1.5 py-0.5 rounded text-[11px] font-mono bg-accent-red-bg text-accent-red font-medium">1</span>
+</a>
+<a class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-md text-on-surface-muted hover:text-on-surface hover:bg-surface-card/60 font-medium text-[13px] transition-colors" href="#">
+<span class="material-symbols-outlined text-[19px]">tune</span>
+<span>Settings</span>
+</a>
+</nav>
+</div>
+<!-- Clean Cloud Status -->
+<div class="p-5 border-t border-border-subtle/50">
+<div class="flex items-center justify-between text-[12px] font-body">
+<span class="text-on-surface-subtle font-medium">Cloud</span>
+<div class="flex items-center gap-1.5 text-on-surface-muted">
+<span class="w-2 h-2 rounded-full bg-accent-green"></span>
+<span class="font-medium">Connected</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<div class="pl-60">
+<main class="min-h-screen px-8 lg:px-12 py-10 max-w-[1240px]">
+<!-- 1. Header Row -->
+<header class="mb-10 flex items-baseline justify-between">
+<div>
+<h1 class="font-display text-2xl lg:text-[28px] font-semibold text-on-surface tracking-tight">Dashboard</h1>
+<p class="text-on-surface-muted text-[14px] mt-1">Monitor your connected SmartAdapters.</p>
+</div>
+</header>
+<!-- 2. Summary Stats (Spacious, quiet, human-crafted) -->
+<section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+<!-- Stat 1: Devices -->
+<div class="p-6 rounded-lg bg-surface-card border border-border-subtle flex flex-col justify-between">
+<span class="text-[11px] font-semibold uppercase tracking-wider text-on-surface-subtle">Devices</span>
+<div class="mt-4 flex items-baseline">
+<span class="font-mono text-3xl font-medium text-on-surface tracking-tight">04</span>
+</div>
+</div>
+<!-- Stat 2: Online -->
+<div class="p-6 rounded-lg bg-surface-card border border-border-subtle flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-semibold uppercase tracking-wider text-on-surface-subtle">Online</span>
+<span class="w-1.5 h-1.5 rounded-full bg-accent-green"></span>
+</div>
+<div class="mt-4 flex items-baseline">
+<span class="font-mono text-3xl font-medium text-on-surface tracking-tight">03</span>
+</div>
+</div>
+<!-- Stat 3: Current Power -->
+<div class="p-6 rounded-lg bg-surface-card border border-border-subtle flex flex-col justify-between">
+<span class="text-[11px] font-semibold uppercase tracking-wider text-on-surface-subtle">Current Power</span>
+<div class="mt-4 flex items-baseline gap-1.5">
+<span class="font-mono text-3xl font-medium text-primary tracking-tight">1.82</span>
+<span class="font-mono text-sm text-on-surface-muted">kW</span>
+</div>
+</div>
+<!-- Stat 4: Alerts -->
+<div class="p-6 rounded-lg bg-surface-card border border-border-subtle flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-semibold uppercase tracking-wider text-on-surface-subtle">Alerts</span>
+<span class="w-1.5 h-1.5 rounded-full bg-accent-red animate-pulse"></span>
+</div>
+<div class="mt-4 flex items-baseline justify-between">
+<span class="font-mono text-3xl font-medium text-accent-red tracking-tight">01</span>
+<span class="text-[12px] font-mono text-accent-red/90 bg-accent-red-bg px-2 py-0.5 rounded">1 Tripped</span>
+</div>
+</div>
+</section>
+<!-- 3. SmartAdapters Grid -->
+<section class="flex flex-col gap-5">
+<!-- Section Header -->
+<div class="flex items-center justify-between pb-1">
+<h2 class="font-display text-lg font-semibold text-on-surface tracking-tight">SmartAdapters</h2>
+<a class="text-[13px] text-on-surface-muted hover:text-primary transition-colors flex items-center gap-1 font-medium" href="#">
+            View all (4)
+            <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+</a>
+</div>
+<!-- 2-Column Hardware Monitor Cards Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<!-- CARD 1: Living Room Socket (Online) -->
+<article class="p-7 rounded-xl bg-surface-card border border-border-subtle flex flex-col justify-between hover:border-border-muted transition-colors">
+<div>
+<!-- Top Row: Device Name & Status Dot -->
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-display text-base font-semibold text-on-surface tracking-tight">Living Room Socket</h3>
+<div class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#16231d] border border-accent-green/20">
+<span class="w-1.5 h-1.5 rounded-full bg-accent-green"></span>
+<span class="text-[12px] text-accent-green font-medium">Online</span>
+</div>
+</div>
+<!-- Primary Power Focal Point -->
+<div class="mb-6">
+<span class="text-[11px] font-semibold uppercase tracking-wider text-on-surface-subtle block mb-1">Current Power</span>
+<div class="flex items-baseline gap-2">
+<span class="font-mono text-5xl font-light tracking-tight text-on-surface">253</span>
+<span class="font-mono text-lg text-on-surface-muted">W</span>
+</div>
+</div>
+<!-- Secondary Metrics: Voltage & Current -->
+<div class="grid grid-cols-2 gap-4 py-3.5 px-4 rounded-lg bg-surface-subtle border border-border-subtle/70 font-mono text-[13px] mb-6">
+<div>
+<span class="text-on-surface-subtle text-[11px] block uppercase mb-0.5">Voltage</span>
+<span class="text-on-surface font-medium">230.5 V</span>
+</div>
+<div class="border-l border-border-subtle/80 pl-4">
+<span class="text-on-surface-subtle text-[11px] block uppercase mb-0.5">Current</span>
+<span class="text-on-surface font-medium">2.10 A</span>
+</div>
+</div>
+<!-- Utilization Progress Bar & Threshold Limit -->
+<div class="mb-8">
+<div class="flex justify-between text-[12px] font-mono mb-2 text-on-surface-muted">
+<span>253 W of 1,500 W limit</span>
+<span>17%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-subtle rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 17%"></div>
+</div>
+</div>
+</div>
+<!-- Footer: Relay State & Understated Action -->
+<div class="pt-4 border-t border-border-subtle/60 flex items-center justify-between">
+<div class="flex items-center gap-2 text-[12px] font-mono text-on-surface-muted">
+<span>Relay:</span>
+<span class="text-accent-green font-semibold">ON</span>
+</div>
+<div class="flex items-center gap-2.5">
+<button class="px-3 py-1.5 rounded text-[12px] font-medium text-on-surface-muted hover:text-on-surface hover:bg-surface-card-hover border border-border-subtle transition-colors" type="button">
+                  Details
+                </button>
+<button class="px-3 py-1.5 rounded text-[12px] font-medium text-on-surface-muted hover:text-on-surface hover:bg-surface-card-hover border border-border-subtle transition-colors" type="button">
+                  Turn Off
+                </button>
+</div>
+</div>
+</article>
+<!-- CARD 2: Kitchen Socket (Tripped / Overload) -->
+<article class="p-7 rounded-xl bg-surface-card border border-accent-red/30 flex flex-col justify-between relative overflow-hidden">
+<div class="absolute top-0 left-0 right-0 h-[2px] bg-accent-red/80"></div>
+<div>
+<!-- Top Row: Device Name & Status Dot -->
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-display text-base font-semibold text-on-surface tracking-tight">Kitchen Socket</h3>
+<div class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-accent-red-bg border border-accent-red/30">
+<span class="w-1.5 h-1.5 rounded-full bg-accent-red"></span>
+<span class="text-[12px] text-accent-red font-medium">Tripped</span>
+</div>
+</div>
+<!-- Primary Power Focal Point -->
+<div class="mb-6">
+<span class="text-[11px] font-semibold uppercase tracking-wider text-accent-red/90 block mb-1">Peak Trip Load</span>
+<div class="flex items-baseline gap-2">
+<span class="font-mono text-5xl font-light tracking-tight text-accent-red">1,683</span>
+<span class="font-mono text-lg text-accent-red/80">W</span>
+</div>
+</div>
+<!-- Secondary Metrics: Voltage & Current -->
+<div class="grid grid-cols-2 gap-4 py-3.5 px-4 rounded-lg bg-surface-subtle border border-border-subtle/70 font-mono text-[13px] mb-6">
+<div>
+<span class="text-on-surface-subtle text-[11px] block uppercase mb-0.5">Voltage</span>
+<span class="text-on-surface font-medium">228.1 V</span>
+</div>
+<div class="border-l border-border-subtle/80 pl-4">
+<span class="text-on-surface-subtle text-[11px] block uppercase mb-0.5">Current</span>
+<span class="text-accent-red font-medium">7.38 A</span>
+</div>
+</div>
+<!-- Utilization Progress Bar & Threshold Limit -->
+<div class="mb-8">
+<div class="flex justify-between text-[12px] font-mono mb-2 text-accent-red">
+<span>1,683 W of 1,500 W limit</span>
+<span class="font-medium">Overload (112%)</span>
+</div>
+<div class="w-full h-1.5 bg-surface-subtle rounded-full overflow-hidden">
+<div class="h-full bg-accent-red rounded-full" style="width: 100%"></div>
+</div>
+</div>
+</div>
+<!-- Footer: Relay State & Reset Breaker Primary Action -->
+<div class="pt-4 border-t border-border-subtle/60 flex items-center justify-between">
+<div class="flex items-center gap-2 text-[12px] font-mono text-on-surface-muted">
+<span>Relay:</span>
+<span class="text-accent-red font-semibold">OFF</span>
+</div>
+<div class="flex items-center gap-2.5">
+<button class="px-3 py-1.5 rounded text-[12px] font-medium text-on-surface-muted hover:text-on-surface hover:bg-surface-card-hover border border-border-subtle transition-colors" type="button">
+                  Details
+                </button>
+<button class="px-3.5 py-1.5 rounded text-[12px] font-medium bg-accent-red text-white hover:bg-accent-red/90 transition-colors shadow-sm" type="button">
+                  Reset Breaker
+                </button>
+</div>
+</div>
+</article>
+<!-- CARD 3: Workshop Compressor (Online) -->
+<article class="p-7 rounded-xl bg-surface-card border border-border-subtle flex flex-col justify-between hover:border-border-muted transition-colors">
+<div>
+<!-- Top Row: Device Name & Status Dot -->
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-display text-base font-semibold text-on-surface tracking-tight">Workshop Compressor</h3>
+<div class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#16231d] border border-accent-green/20">
+<span class="w-1.5 h-1.5 rounded-full bg-accent-green"></span>
+<span class="text-[12px] text-accent-green font-medium">Online</span>
+</div>
+</div>
+<!-- Primary Power Focal Point -->
+<div class="mb-6">
+<span class="text-[11px] font-semibold uppercase tracking-wider text-on-surface-subtle block mb-1">Current Power</span>
+<div class="flex items-baseline gap-2">
+<span class="font-mono text-5xl font-light tracking-tight text-on-surface">1,120</span>
+<span class="font-mono text-lg text-on-surface-muted">W</span>
+</div>
+</div>
+<!-- Secondary Metrics: Voltage & Current -->
+<div class="grid grid-cols-2 gap-4 py-3.5 px-4 rounded-lg bg-surface-subtle border border-border-subtle/70 font-mono text-[13px] mb-6">
+<div>
+<span class="text-on-surface-subtle text-[11px] block uppercase mb-0.5">Voltage</span>
+<span class="text-on-surface font-medium">231.0 V</span>
+</div>
+<div class="border-l border-border-subtle/80 pl-4">
+<span class="text-on-surface-subtle text-[11px] block uppercase mb-0.5">Current</span>
+<span class="text-on-surface font-medium">4.85 A</span>
+</div>
+</div>
+<!-- Utilization Progress Bar & Threshold Limit -->
+<div class="mb-8">
+<div class="flex justify-between text-[12px] font-mono mb-2 text-on-surface-muted">
+<span>1,120 W of 2,000 W limit</span>
+<span>56%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-subtle rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 56%"></div>
+</div>
+</div>
+</div>
+<!-- Footer: Relay State & Understated Action -->
+<div class="pt-4 border-t border-border-subtle/60 flex items-center justify-between">
+<div class="flex items-center gap-2 text-[12px] font-mono text-on-surface-muted">
+<span>Relay:</span>
+<span class="text-accent-green font-semibold">ON</span>
+</div>
+<div class="flex items-center gap-2.5">
+<button class="px-3 py-1.5 rounded text-[12px] font-medium text-on-surface-muted hover:text-on-surface hover:bg-surface-card-hover border border-border-subtle transition-colors" type="button">
+                  Details
+                </button>
+<button class="px-3 py-1.5 rounded text-[12px] font-medium text-on-surface-muted hover:text-on-surface hover:bg-surface-card-hover border border-border-subtle transition-colors" type="button">
+                  Turn Off
+                </button>
+</div>
+</div>
+</article>
+<!-- CARD 4: Bedroom Socket (Offline) -->
+<article class="p-7 rounded-xl bg-surface-card/60 border border-border-subtle/60 flex flex-col justify-between opacity-80">
+<div>
+<!-- Top Row: Device Name & Status Dot -->
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-display text-base font-semibold text-on-surface/80 tracking-tight">Bedroom Socket</h3>
+<div class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-surface-subtle border border-border-subtle">
+<span class="w-1.5 h-1.5 rounded-full bg-on-surface-subtle"></span>
+<span class="text-[12px] text-on-surface-muted font-medium">Offline</span>
+</div>
+</div>
+<!-- Primary Power Focal Point -->
+<div class="mb-6">
+<span class="text-[11px] font-semibold uppercase tracking-wider text-on-surface-subtle block mb-1">Current Power</span>
+<div class="flex items-baseline gap-2">
+<span class="font-mono text-5xl font-light tracking-tight text-on-surface-subtle">0</span>
+<span class="font-mono text-lg text-on-surface-subtle">W</span>
+</div>
+</div>
+<!-- Secondary Metrics: Voltage & Current -->
+<div class="grid grid-cols-2 gap-4 py-3.5 px-4 rounded-lg bg-surface-subtle/60 border border-border-subtle/50 font-mono text-[13px] mb-6">
+<div>
+<span class="text-on-surface-subtle text-[11px] block uppercase mb-0.5">Voltage</span>
+<span class="text-on-surface-subtle font-medium">—</span>
+</div>
+<div class="border-l border-border-subtle/50 pl-4">
+<span class="text-on-surface-subtle text-[11px] block uppercase mb-0.5">Current</span>
+<span class="text-on-surface-subtle font-medium">—</span>
+</div>
+</div>
+<!-- Utilization Progress Bar & Threshold Limit -->
+<div class="mb-8">
+<div class="flex justify-between text-[12px] font-mono mb-2 text-on-surface-subtle">
+<span>0 W of 1,000 W limit</span>
+<span>0%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-subtle rounded-full overflow-hidden">
+<div class="h-full bg-border-subtle rounded-full" style="width: 0%"></div>
+</div>
+</div>
+</div>
+<!-- Footer: Relay State & Understated Action -->
+<div class="pt-4 border-t border-border-subtle/40 flex items-center justify-between">
+<div class="flex items-center gap-2 text-[12px] font-mono text-on-surface-subtle">
+<span>Relay:</span>
+<span class="font-semibold text-on-surface-subtle">OFF</span>
+</div>
+<div class="flex items-center gap-2.5">
+<button class="px-3 py-1.5 rounded text-[12px] font-medium text-on-surface-muted hover:text-on-surface hover:bg-surface-card-hover border border-border-subtle transition-colors" type="button">
+                  Details
+                </button>
+<button class="px-3 py-1.5 rounded text-[12px] font-medium text-on-surface-muted hover:text-on-surface hover:bg-surface-card-hover border border-border-subtle transition-colors" type="button">
+                  Check Link
+                </button>
+</div>
+</div>
+</article>
+</div>
+</section>
+</main>
+</div>
+</body></html>

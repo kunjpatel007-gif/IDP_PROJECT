@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SmartAdapter Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<style>
+  @layer base {
+    html, body { margin: 0; padding: 0; }
+    body { overscroll-behavior: none; }
+  }
+  ::-webkit-scrollbar { display: none; }
+
+  /* Skeleton pulse animation for loading state */
+  @keyframes skeleton-pulse {
+    0%, 100% { opacity: 0.4; }
+    50%       { opacity: 0.9; }
+  }
+  .skeleton { animation: skeleton-pulse 1.6s ease-in-out infinite; }
+
+  /* Smooth value transitions */
+  .metric-val { transition: color 0.3s ease; }
+
+  /* Subtle card entrance */
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  #device-card { animation: card-in 0.35s ease forwards; }
+
+  /* Button loading spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .btn-spinner {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 4px;
+  }
+
+  /* Tripped card accent bar */
+  .trip-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: rgba(248,113,113,0.8);
+  }
+</style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "surface":             "#121316",
+          "surface-subtle":      "#16171c",
+          "surface-card":        "#1a1b20",
+          "surface-card-hover":  "#212228",
+          "border-subtle":       "#292a32",
+          "border-muted":        "#353742",
+          "primary":             "#d97736",
+          "primary-soft":        "#ffb68c",
+          "on-surface":          "#e4e5ea",
+          "on-surface-muted":    "#9699a6",
+          "on-surface-subtle":   "#696c7a",
+          "accent-green":        "#22c55e",
+          "accent-red":          "#f87171",
+          "accent-red-bg":       "rgba(239, 68, 68, 0.12)",
+        },
+        fontFamily: {
+          body:    ["Inter",         "sans-serif"],
+          display: ["Chivo",         "sans-serif"],
+          mono:    ["JetBrains Mono","monospace"]
+        }
+      }
+    }
+  }
+</script>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased selection:bg-primary/20 selection:text-primary">
+
+<!-- ═══════════════════════════════════════════════════
+     STEP 1 ── User Firebase Config
+     Fill in your project values before opening this file.
+     ═══════════════════════════════════════════════════ -->
+<script>
+  window.FIREBASE_CONFIG = {
+    apiKey: "AIzaSyA3od6Oqd4BXyRxA9Aict_OkdQGcNH5XTs",
+    authDomain: "smart-adapter-backend.firebaseapp.com",
+    projectId: "smart-adapter-backend",
+    storageBucket: "smart-adapter-backend.firebasestorage.app",
+    messagingSenderId: "1068769473313",
+    appId: "1:1068769473313:web:3d63acc3296b100b788460",
+    measurementId: "G-BVFCTJP53T"
+  };
+</script>
+
+<!-- ═══════════════════════════════════════════════════
+     SIDEBAR
+     ═══════════════════════════════════════════════════ -->
+<aside class="fixed left-0 top-0 h-screen w-60 bg-[#141519] border-r border-border-subtle flex flex-col justify-between select-none z-40">
+  <div class="flex flex-col">
+    <!-- Logo -->
+    <div class="h-16 px-6 flex items-center border-b border-border-subtle/50">
+      <img alt="SmartAdapter"
+           class="h-6 w-auto object-contain"
+           src="https://lh3.googleusercontent.com/aida/AEtjO1WSBn2RXb6NqQpKoxe0PfC2WTshi0ykdVNDjIesaLcBUQA_GvruaXR4MAaE91QWKdlH9fIszAwcxb562hhRvTEVx46gHlvjxGGXqJPcuhUkp2BbmiC3X8deiMJjNaGxyPiE3SK_lXZiBeZJCpyWf5jO_5vi_qxN_Lo_wSo2Q2oLOkTZnzvGX_njayhnLB06tGuPWyTjMF1tlMtoHyj3UioaJCQbvW5xsRtlIL2a_kHf"/>
+    </div>
+    <!-- Nav -->
+    <nav class="flex flex-col gap-1 px-3 pt-6">
+      <a class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-md bg-surface-card text-primary font-medium text-[13px] transition-colors" href="#">
+        <span class="material-symbols-outlined text-[19px]">grid_view</span>
+        <span>Dashboard</span>
+      </a>
+      <a class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-md text-on-surface-muted hover:text-on-surface hover:bg-surface-card/60 font-medium text-[13px] transition-colors" href="#">
+        <span class="material-symbols-outlined text-[19px]">memory</span>
+        <span>Devices</span>
+      </a>
+      <a class="flex items-center justify-between px-3.5 py-2.5 rounded-md text-on-surface-muted hover:text-on-surface hover:bg-surface-card/60 font-medium text-[13px] transition-colors" href="#">
+        <div class="flex items-center gap-3.5">
+          <span class="material-symbols-outlined text-[19px]">notifications</span>
+          <span>Alerts</span>
+        </div>
+        <!-- Alert badge: shown only when tripped -->
+        <span id="nav-alert-badge"
+              class="px-1.5 py-0.5 rounded text-[11px] font-mono bg-accent-red-bg text-accent-red font-medium hidden">1</span>
+      </a>
+      <a class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-md text-on-surface-muted hover:text-on-surface hover:bg-surface-card/60 font-medium text-[13px] transition-colors" href="#">
+        <span class="material-symbols-outlined text-[19px]">tune</span>
+        <span>Settings</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- Cloud status indicator (bottom of sidebar) -->
+  <div class="p-5 border-t border-border-subtle/50">
+    <div class="flex items-center justify-between text-[12px] font-body">
+      <span class="text-on-surface-subtle font-medium">Cloud</span>
+      <div class="flex items-center gap-1.5 text-on-surface-muted">
+        <span id="cloud-dot" class="w-2 h-2 rounded-full bg-on-surface-subtle transition-colors duration-500"></span>
+        <span id="cloud-label" class="font-medium">Connecting…</span>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══════════════════════════════════════════════════
+     MAIN CANVAS
+     ═══════════════════════════════════════════════════ -->
+<div class="pl-60">
+  <main class="min-h-screen px-8 lg:px-12 py-10 max-w-[1240px]">
+
+    <!-- 1. Header -->
+    <header class="mb-10 flex items-baseline justify-between">
+      <div>
+        <h1 class="font-display text-2xl lg:text-[28px] font-semibold text-on-surface tracking-tight">Dashboard</h1>
+        <p class="text-on-surface-muted text-[14px] mt-1">Monitor your connected SmartAdapters.</p>
+      </div>
+      <!-- Last updated timestamp -->
+      <span id="last-updated" class="text-[12px] font-mono text-on-surface-subtle hidden"></span>
+    </header>
+
+    <!-- 2. Summary Stats Row -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+
+      <!-- Devices (always 1) -->
+      <div class="p-6 rounded-lg bg-surface-card border border-border-subtle flex flex-col justify-between">
+        <span class="text-[11px] font-semibold uppercase tracking-wider text-on-surface-subtle">Devices</span>
+        <div class="mt-4 flex items-baseline">
+          <span class="font-mono text-3xl font-medium text-on-surface tracking-tight">01</span>
+        </div>
+      </div>
+
+      <!-- Online (0 or 1) -->
+      <div class="p-6 rounded-lg bg-surface-card border border-border-subtle flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-semibold uppercase tracking-wider text-on-surface-subtle">Online</span>
+          <span id="stat-online-dot" class="w-1.5 h-1.5 rounded-full bg-on-surface-subtle transition-colors duration-300"></span>
+        </div>
+        <div class="mt-4 flex items-baseline">
+          <span id="stat-online-val" class="font-mono text-3xl font-medium text-on-surface tracking-tight skeleton">–</span>
+        </div>
+      </div>
+
+      <!-- Current Power (live watts) -->
+      <div class="p-6 rounded-lg bg-surface-card border border-border-subtle flex flex-col justify-between">
+        <span class="text-[11px] font-semibold uppercase tracking-wider text-on-surface-subtle">Current Power</span>
+        <div class="mt-4 flex items-baseline gap-1.5">
+          <span id="stat-power-val" class="font-mono text-3xl font-medium text-primary tracking-tight skeleton">–</span>
+          <span id="stat-power-unit" class="font-mono text-sm text-on-surface-muted">W</span>
+        </div>
+      </div>
+
+      <!-- Alerts (0 or 1 based on tripped state) -->
+      <div class="p-6 rounded-lg bg-surface-card border border-border-subtle flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-semibold uppercase tracking-wider text-on-surface-subtle">Alerts</span>
+          <span id="stat-alert-dot" class="w-1.5 h-1.5 rounded-full bg-on-surface-subtle transition-colors duration-300"></span>
+        </div>
+        <div class="mt-4 flex items-baseline justify-between">
+          <span id="stat-alert-val" class="font-mono text-3xl font-medium text-on-surface tracking-tight skeleton">–</span>
+          <span id="stat-alert-badge" class="text-[12px] font-mono text-accent-red/90 bg-accent-red-bg px-2 py-0.5 rounded hidden">1 Tripped</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 3. SmartAdapters Grid -->
+    <section class="flex flex-col gap-5">
+      <div class="flex items-center justify-between pb-1">
+        <h2 class="font-display text-lg font-semibold text-on-surface tracking-tight">SmartAdapters</h2>
+        <span class="text-[13px] text-on-surface-muted font-medium">View all (1)</span>
+      </div>
+
+      <!-- Single device grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- ── DEVICE CARD: socket1 ── -->
+        <article id="device-card"
+                 class="p-7 rounded-xl bg-surface-card border border-border-subtle flex flex-col justify-between hover:border-border-muted transition-colors relative overflow-hidden">
+
+          <!-- Trip accent bar (hidden by default, shown when tripped) -->
+          <div id="card-trip-bar" class="trip-bar hidden"></div>
+
+          <div>
+            <!-- Top Row: Name + Status Badge -->
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="font-display text-base font-semibold text-on-surface tracking-tight">Living Room Socket</h3>
+              <!-- Status badge — state drives classes via JS -->
+              <div id="status-badge"
+                   class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-surface-subtle border border-border-subtle">
+                <span id="status-dot" class="w-1.5 h-1.5 rounded-full bg-on-surface-subtle"></span>
+                <span id="status-label" class="text-[12px] text-on-surface-muted font-medium">Loading…</span>
+              </div>
+            </div>
+
+            <!-- Primary Power Focal Point -->
+            <div class="mb-6">
+              <span id="power-label"
+                    class="text-[11px] font-semibold uppercase tracking-wider text-on-surface-subtle block mb-1">Current Power</span>
+              <div class="flex items-baseline gap-2">
+                <span id="power-val"
+                      class="font-mono text-5xl font-light tracking-tight text-on-surface metric-val skeleton">–</span>
+                <span id="power-unit" class="font-mono text-lg text-on-surface-muted">W</span>
+              </div>
+            </div>
+
+            <!-- Secondary Metrics: Voltage & Current -->
+            <div class="grid grid-cols-2 gap-4 py-3.5 px-4 rounded-lg bg-surface-subtle border border-border-subtle/70 font-mono text-[13px] mb-6">
+              <div>
+                <span class="text-on-surface-subtle text-[11px] block uppercase mb-0.5">Voltage</span>
+                <span id="voltage-val" class="text-on-surface font-medium skeleton">–</span>
+              </div>
+              <div class="border-l border-border-subtle/80 pl-4">
+                <span class="text-on-surface-subtle text-[11px] block uppercase mb-0.5">Current</span>
+                <span id="current-val" class="font-medium skeleton">–</span>
+              </div>
+            </div>
+
+            <!-- Utilization Bar -->
+            <div class="mb-8">
+              <div class="flex justify-between text-[12px] font-mono mb-2 text-on-surface-muted">
+                <span id="util-label">–</span>
+                <span id="util-pct">–</span>
+              </div>
+              <div class="w-full h-1.5 bg-surface-subtle rounded-full overflow-hidden">
+                <div id="util-bar" class="h-full bg-primary rounded-full transition-all duration-700" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer: Relay state + Action buttons -->
+          <div class="pt-4 border-t border-border-subtle/60 flex items-center justify-between">
+            <div class="flex items-center gap-2 text-[12px] font-mono text-on-surface-muted">
+              <span>Relay:</span>
+              <span id="relay-label" class="font-semibold text-on-surface-subtle">–</span>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <!-- Details button (static) -->
+              <button class="px-3 py-1.5 rounded text-[12px] font-medium text-on-surface-muted hover:text-on-surface hover:bg-surface-card-hover border border-border-subtle transition-colors"
+                      type="button"
+                      onclick="toggleDetails()">
+                Details
+              </button>
+              <!-- Dynamic control button (Turn Off / Reset Breaker) -->
+              <button id="ctrl-btn"
+                      class="px-3 py-1.5 rounded text-[12px] font-medium text-on-surface-muted hover:text-on-surface hover:bg-surface-card-hover border border-border-subtle transition-colors hidden"
+                      type="button">
+                …
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <!-- ── DETAILS PANEL (hidden by default) ── -->
+        <article id="details-panel"
+                 class="p-7 rounded-xl bg-surface-card border border-border-subtle flex flex-col gap-4 hidden">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-display text-base font-semibold text-on-surface tracking-tight">socket1 — Extended Telemetry</h3>
+            <button onclick="toggleDetails()"
+                    class="text-on-surface-subtle hover:text-on-surface transition-colors">
+              <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+          </div>
+          <!-- Metrics table -->
+          <div class="grid grid-cols-2 gap-x-6 gap-y-3 font-mono text-[12px]">
+            <div class="flex justify-between border-b border-border-subtle/40 pb-2">
+              <span class="text-on-surface-subtle uppercase text-[10px] tracking-wider pt-0.5">Energy</span>
+              <span id="det-energy" class="text-on-surface font-medium">–</span>
+            </div>
+            <div class="flex justify-between border-b border-border-subtle/40 pb-2">
+              <span class="text-on-surface-subtle uppercase text-[10px] tracking-wider pt-0.5">Frequency</span>
+              <span id="det-freq" class="text-on-surface font-medium">–</span>
+            </div>
+            <div class="flex justify-between border-b border-border-subtle/40 pb-2">
+              <span class="text-on-surface-subtle uppercase text-[10px] tracking-wider pt-0.5">Power Factor</span>
+              <span id="det-pf" class="text-on-surface font-medium">–</span>
+            </div>
+            <div class="flex justify-between border-b border-border-subtle/40 pb-2">
+              <span class="text-on-surface-subtle uppercase text-[10px] tracking-wider pt-0.5">Threshold</span>
+              <span id="det-threshold" class="text-on-surface font-medium">–</span>
+            </div>
+            <div class="flex justify-between border-b border-border-subtle/40 pb-2">
+              <span class="text-on-surface-subtle uppercase text-[10px] tracking-wider pt-0.5">RSSI</span>
+              <span id="det-rssi" class="text-on-surface font-medium">–</span>
+            </div>
+            <div class="flex justify-between border-b border-border-subtle/40 pb-2">
+              <span class="text-on-surface-subtle uppercase text-[10px] tracking-wider pt-0.5">Free Heap</span>
+              <span id="det-heap" class="text-on-surface font-medium">–</span>
+            </div>
+            <div class="flex justify-between border-b border-border-subtle/40 pb-2">
+              <span class="text-on-surface-subtle uppercase text-[10px] tracking-wider pt-0.5">FW Version</span>
+              <span id="det-fw" class="text-on-surface font-medium">–</span>
+            </div>
+            <div class="flex justify-between border-b border-border-subtle/40 pb-2">
+              <span class="text-on-surface-subtle uppercase text-[10px] tracking-wider pt-0.5">Sequence #</span>
+              <span id="det-seq" class="text-on-surface font-medium">–</span>
+            </div>
+            <div class="col-span-2 flex justify-between border-b border-border-subtle/40 pb-2">
+              <span class="text-on-surface-subtle uppercase text-[10px] tracking-wider pt-0.5">Last Seen</span>
+              <span id="det-lastseen" class="text-on-surface font-medium">–</span>
+            </div>
+          </div>
+
+          <!-- Toast area for control feedback -->
+          <div id="ctrl-toast"
+               class="mt-2 px-3 py-2 rounded text-[12px] font-mono bg-surface-subtle border border-border-subtle text-on-surface-muted hidden">
+          </div>
+        </article>
+
+      </div><!-- end grid -->
+    </section>
+
+  </main>
+</div><!-- end pl-60 -->
+
+
+<!-- ═══════════════════════════════════════════════════
+     FIREBASE LIVE-DATA ENGINE  (ESM module)
+     ═══════════════════════════════════════════════════ -->
+<script type="module">
+// ─────────────────────────────────────────────────────
+// STEP 1: Fill in your Firebase project config here.
+// The script block at the top of <body> can also set
+// window.FIREBASE_CONFIG before this module loads.
+// ─────────────────────────────────────────────────────
+const firebaseConfig = window.FIREBASE_CONFIG || {
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "smart-adapter-backend.firebaseapp.com",
+  projectId:         "smart-adapter-backend",
+  storageBucket:     "smart-adapter-backend.appspot.com",
+  messagingSenderId: "1068769473313",
+  appId:             "YOUR_APP_ID"
+};
+
+// ─── Firebase SDK (CDN ESM) ──────────────────────────
+import { initializeApp }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, onSnapshot }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ─── Initialise ──────────────────────────────────────
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ─── Constants ───────────────────────────────────────
+const STALE_MS        = 15_000;   // 15 s gap → Offline
+const LOCAL_API       = 'http://smartsocket1.local/api/control';
+const COLLECTION      = 'telemetry';
+const DOCUMENT        = 'socket1';
+
+// ─── DOM refs ────────────────────────────────────────
+const elCloudDot      = document.getElementById('cloud-dot');
+const elCloudLabel    = document.getElementById('cloud-label');
+const elLastUpdated   = document.getElementById('last-updated');
+const elNavBadge      = document.getElementById('nav-alert-badge');
+
+// Stats row
+const elStatOnlineDot = document.getElementById('stat-online-dot');
+const elStatOnlineVal = document.getElementById('stat-online-val');
+const elStatPowerVal  = document.getElementById('stat-power-val');
+const elStatPowerUnit = document.getElementById('stat-power-unit');
+const elStatAlertDot  = document.getElementById('stat-alert-dot');
+const elStatAlertVal  = document.getElementById('stat-alert-val');
+const elStatAlertBadge= document.getElementById('stat-alert-badge');
+
+// Card
+const elCard          = document.getElementById('device-card');
+const elTripBar       = document.getElementById('card-trip-bar');
+const elStatusBadge   = document.getElementById('status-badge');
+const elStatusDot     = document.getElementById('status-dot');
+const elStatusLabel   = document.getElementById('status-label');
+const elPowerLabel    = document.getElementById('power-label');
+const elPowerVal      = document.getElementById('power-val');
+const elPowerUnit     = document.getElementById('power-unit');
+const elVoltageVal    = document.getElementById('voltage-val');
+const elCurrentVal    = document.getElementById('current-val');
+const elCurrentValEl  = document.getElementById('current-val');
+const elUtilLabel     = document.getElementById('util-label');
+const elUtilPct       = document.getElementById('util-pct');
+const elUtilBar       = document.getElementById('util-bar');
+const elRelayLabel    = document.getElementById('relay-label');
+const elCtrlBtn       = document.getElementById('ctrl-btn');
+
+// Details panel
+const elDetEnergy     = document.getElementById('det-energy');
+const elDetFreq       = document.getElementById('det-freq');
+const elDetPF         = document.getElementById('det-pf');
+const elDetThreshold  = document.getElementById('det-threshold');
+const elDetRSSI       = document.getElementById('det-rssi');
+const elDetHeap       = document.getElementById('det-heap');
+const elDetFW         = document.getElementById('det-fw');
+const elDetSeq        = document.getElementById('det-seq');
+const elDetLastSeen   = document.getElementById('det-lastseen');
+const elCtrlToast     = document.getElementById('ctrl-toast');
+
+// ─── Helpers ─────────────────────────────────────────
+function removeSkeleton(el) {
+  el.classList.remove('skeleton');
+}
+
+function fmt(n, decimals = 0) {
+  if (n == null) return '–';
+  return Number(n).toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+}
+
+function setCloudStatus(connected) {
+  if (connected) {
+    elCloudDot.classList.replace('bg-on-surface-subtle', 'bg-accent-green');
+    elCloudLabel.textContent = 'Connected';
+  } else {
+    elCloudDot.classList.replace('bg-accent-green', 'bg-on-surface-subtle');
+    elCloudLabel.textContent = 'Offline';
+  }
+}
+
+function showToast(msg, isError = false) {
+  elCtrlToast.textContent = msg;
+  elCtrlToast.classList.remove('hidden', 'text-accent-red', 'text-accent-green', 'text-on-surface-muted');
+  elCtrlToast.classList.add(isError ? 'text-accent-red' : 'text-accent-green');
+  clearTimeout(elCtrlToast._timer);
+  elCtrlToast._timer = setTimeout(() => elCtrlToast.classList.add('hidden'), 5000);
+}
+
+// Parse last_seen — Firestore may send a Timestamp object or ISO string
+function parseLastSeen(raw) {
+  if (!raw) return null;
+  if (typeof raw === 'object' && typeof raw.toMillis === 'function') {
+    return raw.toMillis(); // Firestore Timestamp
+  }
+  if (typeof raw === 'object' && raw.seconds != null) {
+    return raw.seconds * 1000 + Math.floor((raw.nanoseconds || 0) / 1e6);
+  }
+  const d = new Date(raw);
+  return isNaN(d) ? null : d.getTime();
+}
+
+// ─── Status computation ───────────────────────────────
+// Returns 'online' | 'tripped' | 'offline'
+function computeStatus(data) {
+  if (data.tripped === true) return 'tripped';
+  const ms = parseLastSeen(data.last_seen);
+  if (ms == null || (Date.now() - ms) > STALE_MS) return 'offline';
+  return 'online';
+}
+
+// ─── Apply status styling to card ────────────────────
+function applyCardStatus(status) {
+  // Reset card border
+  elCard.classList.remove(
+    'border-accent-red/30', 'border-border-subtle',
+    'opacity-80', 'hover:border-border-muted'
+  );
+
+  // Reset trip bar
+  elTripBar.classList.add('hidden');
+
+  // Reset badge
+  elStatusBadge.className =
+    'flex items-center gap-2 px-2.5 py-1 rounded-full transition-colors duration-300';
+
+  if (status === 'online') {
+    elCard.classList.add('border-border-subtle', 'hover:border-border-muted');
+    elStatusBadge.classList.add('bg-[#16231d]', 'border', 'border-accent-green/20');
+    elStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-accent-green';
+    elStatusLabel.className = 'text-[12px] text-accent-green font-medium';
+    elStatusLabel.textContent = 'Online';
+  } else if (status === 'tripped') {
+    elCard.classList.add('border-accent-red/30');
+    elTripBar.classList.remove('hidden');
+    elStatusBadge.classList.add('bg-accent-red-bg', 'border', 'border-accent-red/30');
+    elStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-accent-red';
+    elStatusLabel.className = 'text-[12px] text-accent-red font-medium';
+    elStatusLabel.textContent = 'Tripped';
+  } else {
+    // offline
+    elCard.classList.add('border-border-subtle', 'opacity-80');
+    elStatusBadge.classList.add('bg-surface-subtle', 'border', 'border-border-subtle');
+    elStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-on-surface-subtle';
+    elStatusLabel.className = 'text-[12px] text-on-surface-muted font-medium';
+    elStatusLabel.textContent = 'Offline';
+  }
+}
+
+// ─── Apply metrics to card ────────────────────────────
+function applyCardMetrics(data, status) {
+  const isTripped = status === 'tripped';
+  const isOffline = status === 'offline';
+
+  // Power focal point
+  if (isTripped) {
+    elPowerLabel.textContent = 'Peak Trip Load';
+    elPowerLabel.className = 'text-[11px] font-semibold uppercase tracking-wider text-accent-red/90 block mb-1';
+    elPowerVal.className = 'font-mono text-5xl font-light tracking-tight text-accent-red metric-val';
+    elPowerUnit.className = 'font-mono text-lg text-accent-red/80';
+  } else if (isOffline) {
+    elPowerLabel.textContent = 'Current Power';
+    elPowerLabel.className = 'text-[11px] font-semibold uppercase tracking-wider text-on-surface-subtle block mb-1';
+    elPowerVal.className = 'font-mono text-5xl font-light tracking-tight text-on-surface-subtle metric-val';
+    elPowerUnit.className = 'font-mono text-lg text-on-surface-subtle';
+  } else {
+    elPowerLabel.textContent = 'Current Power';
+    elPowerLabel.className = 'text-[11px] font-semibold uppercase tracking-wider text-on-surface-subtle block mb-1';
+    elPowerVal.className = 'font-mono text-5xl font-light tracking-tight text-on-surface metric-val';
+    elPowerUnit.className = 'font-mono text-lg text-on-surface-muted';
+  }
+
+  const power   = data.power   ?? 0;
+  const voltage = data.voltage ?? null;
+  const current = data.current ?? null;
+  const threshold = data.threshold ?? 1500;
+
+  elPowerVal.textContent  = isOffline ? '0' : fmt(power);
+  elVoltageVal.textContent = isOffline ? '—' : `${fmt(voltage, 1)} V`;
+  elCurrentVal.textContent = isOffline ? '—' : `${fmt(current, 2)} A`;
+
+  // Current text color
+  elCurrentVal.className = isTripped
+    ? 'text-accent-red font-medium'
+    : 'text-on-surface font-medium';
+
+  // Utilization bar
+  const pct = Math.min(100, Math.round((power / threshold) * 100));
+  const overload = pct >= 100;
+
+  if (isOffline) {
+    elUtilLabel.textContent = `0 W of ${fmt(threshold)} W limit`;
+    elUtilLabel.className = 'text-[12px] font-mono text-on-surface-subtle';
+    elUtilPct.textContent = '0%';
+    elUtilPct.className = 'text-[12px] font-mono text-on-surface-subtle';
+    elUtilBar.style.width = '0%';
+    elUtilBar.className = 'h-full bg-border-subtle rounded-full transition-all duration-700';
+  } else if (overload || isTripped) {
+    elUtilLabel.textContent = `${fmt(power)} W of ${fmt(threshold)} W limit`;
+    elUtilLabel.className = 'text-[12px] font-mono text-accent-red';
+    elUtilPct.textContent = overload ? `Overload (${pct}%)` : `${pct}%`;
+    elUtilPct.className = 'text-[12px] font-mono font-medium text-accent-red';
+    elUtilBar.style.width = '100%';
+    elUtilBar.className = 'h-full bg-accent-red rounded-full transition-all duration-700';
+  } else {
+    elUtilLabel.textContent = `${fmt(power)} W of ${fmt(threshold)} W limit`;
+    elUtilLabel.className = 'text-[12px] font-mono text-on-surface-muted';
+    elUtilPct.textContent = `${pct}%`;
+    elUtilPct.className = 'text-[12px] font-mono text-on-surface-muted';
+    elUtilBar.style.width = `${pct}%`;
+    elUtilBar.className = 'h-full bg-primary rounded-full transition-all duration-700';
+  }
+
+  // Relay state
+  const relayOn = data.relay_on === true;
+  elRelayLabel.textContent = isOffline ? 'OFF' : (relayOn ? 'ON' : 'OFF');
+  elRelayLabel.className = isOffline
+    ? 'font-semibold text-on-surface-subtle'
+    : relayOn
+      ? 'font-semibold text-accent-green'
+      : (isTripped ? 'font-semibold text-accent-red' : 'font-semibold text-on-surface-muted');
+
+  // Control button
+  if (isOffline) {
+    elCtrlBtn.classList.add('hidden');
+  } else if (isTripped) {
+    elCtrlBtn.classList.remove('hidden');
+    elCtrlBtn.textContent  = 'Reset Breaker';
+    elCtrlBtn.className    =
+      'px-3.5 py-1.5 rounded text-[12px] font-medium bg-accent-red text-white hover:bg-accent-red/90 transition-colors shadow-sm';
+    elCtrlBtn.dataset.cmd  = 'RESET';
+  } else {
+    elCtrlBtn.classList.remove('hidden');
+    elCtrlBtn.textContent  = relayOn ? 'Turn Off' : 'Turn On';
+    elCtrlBtn.className    =
+      'px-3 py-1.5 rounded text-[12px] font-medium text-on-surface-muted hover:text-on-surface hover:bg-surface-card-hover border border-border-subtle transition-colors';
+    elCtrlBtn.dataset.cmd  = relayOn ? 'OFF' : 'ON';
+  }
+
+  // Details panel
+  elDetEnergy.textContent    = `${fmt(data.energy, 2)} kWh`;
+  elDetFreq.textContent      = `${fmt(data.frequency, 1)} Hz`;
+  elDetPF.textContent        = fmt(data.power_factor, 3);
+  elDetThreshold.textContent = `${fmt(data.threshold)} W`;
+  elDetRSSI.textContent      = `${data.rssi ?? '–'} dBm`;
+  elDetHeap.textContent      = data.free_heap != null ? `${(data.free_heap / 1024).toFixed(1)} kB` : '–';
+  elDetFW.textContent        = data.fw_version ?? '–';
+  elDetSeq.textContent       = data.seq ?? '–';
+
+  const lastMs = parseLastSeen(data.last_seen);
+  elDetLastSeen.textContent  = lastMs
+    ? new Date(lastMs).toLocaleTimeString('en-US', { hour12: false, hour:'2-digit', minute:'2-digit', second:'2-digit' })
+    : '–';
+}
+
+// ─── Stats row updater ────────────────────────────────
+function applyStats(status, power) {
+  const isOnline  = status === 'online';
+  const isTripped = status === 'tripped';
+
+  // Online stat
+  removeSkeleton(elStatOnlineVal);
+  elStatOnlineVal.textContent = isOnline ? '01' : '00';
+  elStatOnlineDot.className = `w-1.5 h-1.5 rounded-full transition-colors duration-300 ${
+    isOnline ? 'bg-accent-green' : 'bg-on-surface-subtle'
+  }`;
+
+  // Power stat
+  removeSkeleton(elStatPowerVal);
+  const pw = power ?? 0;
+  if (pw >= 1000) {
+    elStatPowerVal.textContent = fmt(pw / 1000, 2);
+    elStatPowerUnit.textContent = 'kW';
+  } else {
+    elStatPowerVal.textContent = fmt(pw, 0);
+    elStatPowerUnit.textContent = 'W';
+  }
+
+  // Alerts stat
+  removeSkeleton(elStatAlertVal);
+  if (isTripped) {
+    elStatAlertVal.textContent = '01';
+    elStatAlertVal.className = 'font-mono text-3xl font-medium text-accent-red tracking-tight';
+    elStatAlertDot.className = 'w-1.5 h-1.5 rounded-full animate-pulse bg-accent-red transition-colors duration-300';
+    elStatAlertBadge.classList.remove('hidden');
+    elNavBadge.classList.remove('hidden');
+  } else {
+    elStatAlertVal.textContent = '00';
+    elStatAlertVal.className = 'font-mono text-3xl font-medium text-on-surface tracking-tight';
+    elStatAlertDot.className = 'w-1.5 h-1.5 rounded-full bg-on-surface-subtle transition-colors duration-300';
+    elStatAlertBadge.classList.add('hidden');
+    elNavBadge.classList.add('hidden');
+  }
+}
+
+// ─── Control Button Handler ───────────────────────────
+async function sendControl(command) {
+  elCtrlBtn.disabled = true;
+  const orig = elCtrlBtn.innerHTML;
+  elCtrlBtn.innerHTML = `<span class="btn-spinner"></span>${command === 'RESET' ? 'Resetting…' : 'Turning Off…'}`;
+
+  // Ensure details panel is open so toast is visible
+  const detPanel = document.getElementById('details-panel');
+  detPanel.classList.remove('hidden');
+
+  try {
+    const res = await fetch(LOCAL_API, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ command }),
+    });
+    if (res.ok) {
+      showToast(`✓ Command "${command}" sent successfully.`);
+    } else {
+      showToast(`Device responded with HTTP ${res.status}.`, true);
+    }
+  } catch (err) {
+    showToast(`⚠ Device unreachable — command not sent. (${err.message})`, true);
+  } finally {
+    elCtrlBtn.disabled = false;
+    elCtrlBtn.innerHTML = orig;
+  }
+}
+
+// Expose toggle function to global scope for onclick attributes
+window.toggleDetails = function () {
+  const detPanel = document.getElementById('details-panel');
+  detPanel.classList.toggle('hidden');
+};
+
+// Wire control button (event delegation — btn re-created by JS so we delegate from card)
+document.getElementById('device-card').addEventListener('click', (e) => {
+  const btn = e.target.closest('#ctrl-btn');
+  if (btn && btn.dataset.cmd && !btn.disabled) {
+    sendControl(btn.dataset.cmd);
+  }
+});
+
+// ─── Firestore onSnapshot ─────────────────────────────
+let firstSnapshot = true;
+
+const docRef = doc(db, COLLECTION, DOCUMENT);
+
+const unsub = onSnapshot(
+  docRef,
+  // Success handler
+  (snapshot) => {
+    if (!snapshot.exists()) {
+      setCloudStatus(false);
+      elCloudLabel.textContent = 'No data';
+      return;
+    }
+
+    setCloudStatus(true);
+
+    const data   = snapshot.data();
+    const status = computeStatus(data);
+
+    // Remove skeleton loaders on first data
+    if (firstSnapshot) {
+      firstSnapshot = false;
+      document.querySelectorAll('.skeleton').forEach(el => el.classList.remove('skeleton'));
+    }
+
+    applyCardStatus(status);
+    applyCardMetrics(data, status);
+    applyStats(status, data.power);
+
+    // Last updated timestamp
+    elLastUpdated.classList.remove('hidden');
+    elLastUpdated.textContent = `Updated ${new Date().toLocaleTimeString('en-US', { hour12: false })}`;
+  },
+  // Error handler
+  (error) => {
+    console.error('[SmartAdapter] Firestore error:', error);
+    setCloudStatus(false);
+    elCloudLabel.textContent = 'Error';
+
+    // Show error state in card
+    elStatusLabel.textContent = 'Error';
+    elStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-accent-red';
+    elStatusLabel.className = 'text-[12px] text-accent-red font-medium';
+
+    applyStats('offline', 0);
+  }
+);
+
+// ─── Stale-detection heartbeat ────────────────────────
+// Re-check last_seen every 5 s to catch devices that stop publishing
+// without Firestore triggering a new snapshot.
+let lastKnownData = null;
+
+const originalOnSnapshot = onSnapshot;
+
+// We intercept the snapshot to cache data for stale heartbeat
+(function startStaleHeartbeat() {
+  setInterval(() => {
+    if (!lastKnownData) return;
+    const status = computeStatus(lastKnownData);
+    applyCardStatus(status);
+    applyCardMetrics(lastKnownData, status);
+    applyStats(status, lastKnownData.power);
+  }, 5_000);
+})();
+
+// Re-subscribe with data cache
+const docRef2 = doc(db, COLLECTION, DOCUMENT);
+onSnapshot(docRef2, (snap) => {
+  if (snap.exists()) lastKnownData = snap.data();
+});
+
+</script>
+</body>
+</html>

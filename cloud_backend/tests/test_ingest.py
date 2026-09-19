@@ -19,12 +19,12 @@ import main
 # 1–4: Method and Auth Tests
 # ===========================================================================
 
-@pytest.mark.parametrize("method", ["GET", "PUT", "DELETE", "PATCH"])
+@pytest.mark.parametrize("method", ["PUT", "DELETE", "PATCH"])
 def test_rejects_non_post_methods(fake_store, env, method):
-    """Test 1: Only POST is accepted."""
+    """Test 1: Only POST (and GET /commands) is accepted; PUT/DELETE/PATCH are rejected."""
     status, headers, body = call(method=method, json_body=valid_payload(), secret=env)
     assert status == 405
-    assert headers.get("Allow") == "POST"
+    assert "POST" in headers.get("Allow", "")
     assert len(fake_store.calls) == 0
 
 

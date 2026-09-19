@@ -45,8 +45,12 @@ const char* MDNS_HOSTNAME = "smartsocket1";       // reachable at http://smartso
 #define FW_VERSION "0.2.0-cloud"
 const char* CLOUD_INGEST_URL = SECRET_CLOUD_INGEST_URL;
 const char* CLOUD_DEVICE_KEY = SECRET_CLOUD_DEVICE_KEY;
+// Command poll URL: same Cloud Function, /commands sub-path
+// e.g. https://us-central1-smart-adapter-backend.cloudfunctions.net/ingest/commands
+#define CLOUD_COMMAND_PATH "/commands"
 
 const uint32_t CLOUD_PUSH_INTERVAL_MS      = 5000;   // ← LOCKED: agreed 5 s push interval
+const uint32_t CLOUD_CMD_POLL_INTERVAL_MS  = 2000;   // poll for commands every 2 s
 const uint32_t CLOUD_MIN_SPACING_MS        = 2500;   // must exceed server MIN_PUSH_INTERVAL_S (2.0 s)
 const uint32_t CLOUD_CONFIG_ERROR_DELAY_MS = 60000;  // after 400/401/403/413/415
 const uint32_t CLOUD_MAX_BACKOFF_MS        = 60000;
@@ -228,6 +232,69 @@ void cloudTask(void* parameter) {
   }
 }
 
+// ---------- Execute a command received from the cloud ----------
+void executeCloudCommand(const String& cmd) {
+  Serial.printf("[cmd] executing cloud command: %s\n", cmd.c_str());
+  if (cmd == "ON") {
+    manuallyOff = false;
+    tripped = false;
+    overloadCounter = 0;
+    setRelay(true);
+  } else if (cmd == "OFF") {
+    manuallyOff = true;
+    setRelay(false);
+  } else if (cmd == "RESET") {
+    tripped = false;
+    manuallyOff = false;
+    overloadCounter = 0;
+    setRelay(true);
+  }
+  // Force immediate cloud push so the new relay state is reflected globally within 5 s
+  if (gCloudTaskHandle) xTaskNotifyGive(gCloudTaskHandle);
+}
+
+// ---------- Command poll task — runs every 2 s on core 0 ----------
+void commandPollTask(void* parameter) {
+  // Build the command URL: base ingest URL + /commands?device_id=<id>
+  String baseUrl = String(CLOUD_INGEST_URL);
+  String cmdUrl = baseUrl + CLOUD_COMMAND_PATH + "?device_id=" + String(DEVICE_ID);
+
+  WiFiClientSecure client;
+  HTTPClient http;
+  client.setCACert(GOOGLE_ROOT_CAS);
+  client.setHandshakeTimeout(CLOUD_TLS_HANDSHAKE_TIMEOUT_S);
+
+  while (true) {
+    vTaskDelay(pdMS_TO_TICKS(CLOUD_CMD_POLL_INTERVAL_MS));
+
+    if (WiFi.status() != WL_CONNECTED) continue;
+    if (ESP.getMaxAllocHeap() < CLOUD_MIN_FREE_BLOCK) continue;
+
+    http.begin(client, cmdUrl);
+    http.addHeader("X-Device-Key", CLOUD_DEVICE_KEY);
+    http.setConnectTimeout(CLOUD_CONNECT_TIMEOUT_MS);
+    http.setTimeout(CLOUD_READ_TIMEOUT_MS);
+
+    int code = http.GET();
+    if (code == 200) {
+      String body = http.getString();
+      http.end();
+
+      StaticJsonDocument<128> doc;
+      DeserializationError err = deserializeJson(doc, body);
+      if (!err && !doc["command"].isNull()) {
+        String cmd = doc["command"].as<String>();
+        executeCloudCommand(cmd);
+      }
+    } else {
+      http.end();
+      if (code > 0) {
+        Serial.printf("[cmd] poll returned %d\n", code);
+      }
+    }
+  }
+}
+
 // ---------- SETUP ----------
 void setup() {
   Serial.begin(115200);
@@ -252,6 +319,9 @@ void setup() {
     xTaskCreatePinnedToCore(cloudTask, "cloudTask", CLOUD_TASK_STACK, nullptr,
                             1, &gCloudTaskHandle, 0 /*core 0*/);
     Serial.println("[cloud] task started");
+    xTaskCreatePinnedToCore(commandPollTask, "cmdPollTask", CLOUD_TASK_STACK, nullptr,
+                            1, nullptr, 0 /*core 0*/);
+    Serial.println("[cmd] command poll task started");
   } else {
     Serial.println("[cloud] disabled: placeholder URL/key in secrets.h");
   }

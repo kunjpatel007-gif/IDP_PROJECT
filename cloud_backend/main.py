@@ -1,4 +1,4 @@
-"""SmartAdapter telemetry ingest — Cloud Function (2nd gen, HTTP trigger)."""
+"""SmartAdapter telemetry ingest + command queue — Cloud Function (2nd gen, HTTP trigger)."""
 from __future__ import annotations
 
 import hmac
@@ -7,7 +7,7 @@ import logging
 import math
 import os
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 import functions_framework
@@ -16,6 +16,9 @@ from google.cloud import firestore
 MAX_BODY_BYTES = 2048
 MIN_SECRET_LEN = 16
 DEVICE_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+COMMAND_COLLECTION = "commands"
+VALID_COMMANDS = {"ON", "OFF", "RESET"}
+COMMAND_TTL_S = 30  # discard commands older than 30 s
 
 NULLABLE_SENSOR_FIELDS = ("voltage", "current", "power", "energy", "frequency", "power_factor")
 REQUIRED_NUMBER_FIELDS = ("threshold",)
@@ -162,18 +165,84 @@ def get_store():
     return _store
 
 
+# ---------- Command queue handler ----------
+
+def _get_cors_headers() -> dict:
+    return {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, X-Device-Key",
+    }
+
+
+def handle_get_commands(request, secret: str, allowed: set):
+    """ESP32 polls this endpoint to fetch (and atomically delete) its next pending command."""
+    provided = request.headers.get("X-Device-Key", "")
+    if not hmac.compare_digest(provided.encode("utf-8"), secret.encode("utf-8")):
+        log.warning("unauthorized /commands request")
+        return _err(401, "unauthorized")
+
+    device_id = request.args.get("device_id", "").strip()
+    if not device_id or not DEVICE_ID_RE.fullmatch(device_id) or device_id not in allowed:
+        return _err(403, "device not allowed or missing device_id param")
+
+    try:
+        store = get_store()
+        cmd_ref = store.client.collection(COMMAND_COLLECTION).document(device_id)
+
+        @firestore.transactional
+        def _fetch_and_delete(txn):
+            snap = cmd_ref.get(transaction=txn)
+            if not snap.exists:
+                return None
+            data = snap.to_dict() or {}
+            # TTL check — discard stale commands
+            issued_at = data.get("issued_at")
+            if issued_at is not None:
+                if isinstance(issued_at, datetime):
+                    age = (datetime.now(timezone.utc) - issued_at).total_seconds()
+                else:
+                    age = 0  # server timestamp not yet resolved, accept it
+                if age > COMMAND_TTL_S:
+                    txn.delete(cmd_ref)
+                    return None
+            cmd = data.get("command")
+            if cmd not in VALID_COMMANDS:
+                txn.delete(cmd_ref)
+                return None
+            txn.delete(cmd_ref)
+            return cmd
+
+        command = _fetch_and_delete(store.client.transaction())
+
+    except Exception:  # noqa: BLE001
+        log.exception("command queue read failed for %s", device_id)
+        return _err(500, "internal error")
+
+    return _resp(200, {"command": command}, _get_cors_headers())
+
+
 # ---------- HTTP entry point ----------
 
 @functions_framework.http
 def ingest(request):
-    if request.method != "POST":
-        return _err(405, "method not allowed", {"Allow": "POST"})
+    # CORS preflight
+    if request.method == "OPTIONS":
+        return ("", 204, _get_cors_headers())
 
     try:
         secret, allowed, min_interval = load_config()
     except ConfigError as exc:
         log.error("config error: %s", exc)
         return _err(500, "server misconfigured")
+
+    # Route: GET /commands  →  ESP32 command poll
+    if request.method == "GET" and request.path.rstrip("/").endswith("/commands"):
+        return handle_get_commands(request, secret, allowed)
+
+    # Route: POST /  →  telemetry ingest
+    if request.method != "POST":
+        return _err(405, "method not allowed", {"Allow": "POST, GET, OPTIONS"})
 
     provided = request.headers.get("X-Device-Key", "")
     if not hmac.compare_digest(provided.encode("utf-8"), secret.encode("utf-8")):
@@ -217,3 +286,4 @@ def ingest(request):
                     retry_after_s=round(retry, 2))
 
     return _resp(200, {"status": "ok"})
+
