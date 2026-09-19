@@ -112,23 +112,43 @@ export default function Sidebar({ connection = 'connecting', alertCount = 0, fwV
       </aside>
 
       {/* ── Handheld chassis bar ─────────────────────────────────── */}
-      <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border-subtle bg-surface-rail px-4 lg:hidden">
-        <div className="flex items-center gap-2.5">
-          <LogoMark />
-          <span className="font-display text-[14px] font-semibold tracking-tight text-on-surface">
-            SmartAdapter
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          {alertCount > 0 ? (
-            <span className="rounded bg-accent-red-bg px-1.5 py-0.5 font-mono text-[11px] font-medium text-accent-red">
-              {alertCount} alert
+      <div className="sticky top-0 z-40 flex flex-col border-b border-border-subtle bg-surface-rail lg:hidden">
+        <header className="flex h-14 items-center justify-between px-4">
+          <div className="flex items-center gap-2.5">
+            <LogoMark />
+            <span className="font-display text-[14px] font-semibold tracking-tight text-on-surface">
+              SmartAdapter
             </span>
-          ) : null}
-          <LinkTrace alive={alive} colour={alive ? '#22c55e' : '#f87171'} width={44} />
-          <StatusOrb status={link.status} size={7} />
-        </div>
-      </header>
+          </div>
+          <div className="flex items-center gap-3">
+            {alertCount > 0 ? (
+              <span className="rounded bg-accent-red-bg px-1.5 py-0.5 font-mono text-[11px] font-medium text-accent-red">
+                {alertCount} alert
+              </span>
+            ) : null}
+            <LinkTrace alive={alive} colour={alive ? '#22c55e' : '#f87171'} width={44} />
+            <StatusOrb status={link.status} size={7} />
+          </div>
+        </header>
+        <nav className="flex items-center gap-4 overflow-x-auto border-t border-border-subtle bg-surface px-4 py-2.5 hide-scrollbar">
+          {NAV.map(({ id, label, href, active }) => (
+            <a
+              key={id}
+              href={href || '#'}
+              aria-current={active ? 'page' : undefined}
+              onClick={(e) => {
+                if (active) e.preventDefault();
+                if (!active && !href) e.preventDefault();
+              }}
+              className={`shrink-0 whitespace-nowrap text-[12px] font-medium transition-colors ${
+                active ? 'text-primary' : 'text-on-surface-muted hover:text-on-surface'
+              }`}
+            >
+              {label}
+            </a>
+          ))}
+        </nav>
+      </div>
     </>
   );
 }
