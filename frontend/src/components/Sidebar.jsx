@@ -13,9 +13,9 @@ import { IconBell, IconChip, IconGrid, IconSliders, LogoMark } from '@/component
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', Icon: IconGrid, active: true },
-  { id: 'devices', label: 'Devices', Icon: IconChip },
-  { id: 'alerts', label: 'Alerts', Icon: IconBell, badge: true },
-  { id: 'settings', label: 'Settings', Icon: IconSliders },
+  { id: 'devices', label: 'Mock: Trip', href: '/?mock=trip', Icon: IconChip },
+  { id: 'alerts', label: 'Mock: Cycling', href: '/?mock=cycling', Icon: IconBell },
+  { id: 'settings', label: 'Mock: Offline', href: '/?mock=offline', Icon: IconSliders },
 ];
 
 const LINK_LEDS = {
@@ -47,15 +47,17 @@ export default function Sidebar({ connection = 'connecting', alertCount = 0, fwV
           </div>
 
           <nav className="flex flex-col gap-1 px-3 pt-5" aria-label="Sections">
-            {NAV.map(({ id, label, Icon, active, badge }) => {
+            {NAV.map(({ id, label, Icon, active, badge, href }) => {
               const showBadge = badge && alertCount > 0;
               return (
                 <a
                   key={id}
-                  href="#"
+                  href={href || '#'}
                   aria-current={active ? 'page' : undefined}
-                  aria-disabled={active ? undefined : true}
-                  onClick={(e) => !active && e.preventDefault()}
+                  onClick={(e) => {
+                    if (active) e.preventDefault();
+                    if (!active && !href) e.preventDefault();
+                  }}
                   className={`relative flex items-center justify-between rounded px-3.5 py-2.5 text-[13px] font-medium transition-colors ${
                     active
                       ? 'bg-surface-card text-primary'
