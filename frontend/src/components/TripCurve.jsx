@@ -70,11 +70,11 @@ export default function TripCurve({ current = 0, threshold = 1500, voltage = 230
   const willTrip = multiple > 1;
   const px = xOf(Math.max(multiple, M_MIN));
   const py = willTrip ? yOf(predicted) : H - PAD.b - 6;
-  const accent = willTrip ? '#f87171' : '#d97736';
+  const accent = willTrip ? '#ef4444' : '#d97736';
 
   return (
     <div className="overflow-hidden border border-border-subtle bg-surface-card">
-      <div className="flex h-7 items-center justify-between border-b border-border-subtle px-3">
+      <div className="flex h-7 items-center justify-between border-b border-border-subtle bg-surface-subtle px-3">
         <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-on-surface-muted">
           Trip curve
         </span>
@@ -105,16 +105,16 @@ export default function TripCurve({ current = 0, threshold = 1500, voltage = 230
           {/* Decade grid */}
           {[0.4, 1, 2, 5, 10, 20].map((m) => (
             <g key={`x${m}`}>
-              <line x1={xOf(m)} y1={PAD.t} x2={xOf(m)} y2={H - PAD.b} stroke="#292a32" strokeWidth="1" />
-              <text x={xOf(m)} y={H - PAD.b + 11} fill="#696c7a" fontSize="7.5" textAnchor="middle" fontFamily="JetBrains Mono, monospace">
+              <line x1={xOf(m)} y1={PAD.t} x2={xOf(m)} y2={H - PAD.b} stroke="#2e313a" strokeWidth="1" />
+              <text x={xOf(m)} y={H - PAD.b + 11} fill="#686d7c" fontSize="7.5" textAnchor="middle" fontFamily="JetBrains Mono, monospace">
                 {m}
               </text>
             </g>
           ))}
           {[0.02, 0.2, 2, 20, 200].map((t) => (
             <g key={`y${t}`}>
-              <line x1={PAD.l} y1={yOf(t)} x2={W - PAD.r} y2={yOf(t)} stroke="#292a32" strokeWidth="1" />
-              <text x={PAD.l - 4} y={yOf(t) + 2.5} fill="#696c7a" fontSize="7.5" textAnchor="end" fontFamily="JetBrains Mono, monospace">
+              <line x1={PAD.l} y1={yOf(t)} x2={W - PAD.r} y2={yOf(t)} stroke="#2e313a" strokeWidth="1" />
+              <text x={PAD.l - 4} y={yOf(t) + 2.5} fill="#686d7c" fontSize="7.5" textAnchor="end" fontFamily="JetBrains Mono, monospace">
                 {t}
               </text>
             </g>
@@ -128,7 +128,7 @@ export default function TripCurve({ current = 0, threshold = 1500, voltage = 230
           <motion.path
             d={curve}
             fill="none"
-            stroke="#9699a6"
+            stroke="#9da2af"
             strokeWidth="1.6"
             strokeLinecap="round"
             pathLength={1}
@@ -175,12 +175,12 @@ export default function TripCurve({ current = 0, threshold = 1500, voltage = 230
                 height="26"
                 fill="#0d0e11"
                 fillOpacity="0.93"
-                stroke="#353742"
+                stroke="#383c47"
               />
               <text
                 x={Math.min(probe.x + 10, W - 69)}
                 y={PAD.t + 13}
-                fill="#e4e5ea"
+                fill="#f4f4f6"
                 fontSize="8"
                 fontFamily="JetBrains Mono, monospace"
               >
@@ -198,7 +198,7 @@ export default function TripCurve({ current = 0, threshold = 1500, voltage = 230
             </g>
           ) : null}
 
-          <text x={PAD.l} y={H - 3} fill="#696c7a" fontSize="7" fontFamily="JetBrains Mono, monospace">
+          <text x={PAD.l} y={H - 3} fill="#686d7c" fontSize="7" fontFamily="JetBrains Mono, monospace">
             × pickup
           </text>
         </svg>

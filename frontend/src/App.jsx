@@ -5,6 +5,9 @@ import BootSequence from '@/components/BootSequence';
 import ScrambleText from '@/components/ScrambleText';
 import CommandPipeline from '@/components/CommandPipeline';
 import DeviceCard from '@/components/DeviceCard';
+import ElectricField from '@/components/ElectricField';
+import ParticleBackground from '@/components/ParticleBackground';
+import StatusStrip from '@/components/StatusStrip';
 
 
 import LiveDataBadge from '@/components/LiveDataBadge';
@@ -85,6 +88,17 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-surface text-on-surface">
+      <ParticleBackground
+        intensity={device.unreachable ? 0 : Math.min(1, device.utilisation / 100)}
+        scatter={device.tripped}
+      />
+
+      <ElectricField
+        intensity={device.unreachable ? 0 : Math.min(1, device.utilisation / 100)}
+        overloaded={device.overloaded}
+        tripped={device.tripped}
+      />
+
       
 
       
@@ -171,7 +185,8 @@ export default function App() {
             onDone={() => setPipeline(null)}
           />
 
-          <StatsRow device={device} powerHistory={powerHistory} />
+          <StatusStrip device={device} />
+              <StatsRow device={device} powerHistory={powerHistory} />
 
           {/* ── Adapter bay ────────────────────────────────────────── */}
           <section className="mt-7">

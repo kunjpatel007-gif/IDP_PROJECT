@@ -67,7 +67,7 @@ export default function PhasorDiagram({
   const vLen = V > 0 ? R * 0.9 : 0;
   const iLen = I > 0 ? R * Math.min(0.82, 0.28 + (I / 12) * 0.54) : 0;
 
-  const accent = tripped ? '#f87171' : '#d97736';
+  const accent = tripped ? '#ef4444' : '#d97736';
   const tip = (len, angle) => [CX + len * Math.cos(angle), CY - len * Math.sin(angle)];
 
   const [vx, vy] = tip(vLen, theta);
@@ -86,7 +86,7 @@ export default function PhasorDiagram({
       onPointerEnter={(e) => e.pointerType !== 'touch' && setHeld(true)}
       onPointerLeave={() => setHeld(false)}
     >
-      <div className="flex h-7 items-center justify-between border-b border-border-subtle px-3">
+      <div className="flex h-7 items-center justify-between border-b border-border-subtle bg-surface-subtle px-3">
         <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-on-surface-muted">
           Phasors
         </span>
@@ -98,10 +98,10 @@ export default function PhasorDiagram({
       <div className="flex flex-col items-center gap-1 p-2.5 sm:gap-2 sm:p-3">
         <svg viewBox="0 0 148 148" className="w-full max-w-[150px] sm:max-w-[168px]" role="img" aria-label={`Phasor diagram, phase angle ${phiDeg.toFixed(1)} degrees`}>
           {/* Unit circle and axes */}
-          <circle cx={CX} cy={CY} r={R} fill="none" stroke="#292a32" strokeWidth="1" />
-          <circle cx={CX} cy={CY} r={R * 0.55} fill="none" stroke="#292a32" strokeWidth="1" strokeDasharray="1 4" />
-          <line x1={CX - R - 6} y1={CY} x2={CX + R + 6} y2={CY} stroke="#353742" strokeWidth="1" />
-          <line x1={CX} y1={CY - R - 6} x2={CX} y2={CY + R + 6} stroke="#353742" strokeWidth="1" />
+          <circle cx={CX} cy={CY} r={R} fill="none" stroke="#2e313a" strokeWidth="1" />
+          <circle cx={CX} cy={CY} r={R * 0.55} fill="none" stroke="#2e313a" strokeWidth="1" strokeDasharray="1 4" />
+          <line x1={CX - R - 6} y1={CY} x2={CX + R + 6} y2={CY} stroke="#383c47" strokeWidth="1" />
+          <line x1={CX} y1={CY - R - 6} x2={CX} y2={CY + R + 6} stroke="#383c47" strokeWidth="1" />
 
           {/* Angle sweep between the two phasors */}
           {live && phiDeg > 1.5 ? (
@@ -125,7 +125,7 @@ export default function PhasorDiagram({
                 const fade = 0.3 - k * 0.062;
                 return (
                   <g key={k} opacity={fade}>
-                    <line x1={CX} y1={CY} x2={gvx} y2={gvy} stroke="#9699a6" strokeWidth="2" strokeLinecap="round" />
+                    <line x1={CX} y1={CY} x2={gvx} y2={gvy} stroke="#9da2af" strokeWidth="2" strokeLinecap="round" />
                     {iLen > 0 ? (
                       <line x1={CX} y1={CY} x2={gix} y2={giy} stroke={accent} strokeWidth="2" strokeLinecap="round" />
                     ) : null}
@@ -135,8 +135,8 @@ export default function PhasorDiagram({
             : null}
 
           {/* Voltage phasor */}
-          <line x1={CX} y1={CY} x2={vx} y2={vy} stroke="#9699a6" strokeWidth="2" strokeLinecap="round" />
-          <circle cx={vx} cy={vy} r="3" fill="#9699a6" />
+          <line x1={CX} y1={CY} x2={vx} y2={vy} stroke="#9da2af" strokeWidth="2" strokeLinecap="round" />
+          <circle cx={vx} cy={vy} r="3" fill="#9da2af" />
 
           {/* Current phasor, lagging by φ */}
           {iLen > 0 ? (
@@ -146,7 +146,7 @@ export default function PhasorDiagram({
             </>
           ) : null}
 
-          <circle cx={CX} cy={CY} r="2.5" fill="#16171c" stroke="#4b4e5c" strokeWidth="1" />
+          <circle cx={CX} cy={CY} r="2.5" fill="#16171b" stroke="#4b5262" strokeWidth="1" />
 
           {/* Instantaneous magnitudes, riding along with each tip */}
           {live ? (
@@ -154,7 +154,7 @@ export default function PhasorDiagram({
               <text
                 x={vx + (vx > CX ? 5 : -5)}
                 y={vy + (vy > CY ? 9 : -4)}
-                fill="#9699a6"
+                fill="#9da2af"
                 fontSize="7.5"
                 textAnchor={vx > CX ? 'start' : 'end'}
                 fontFamily="JetBrains Mono, monospace"
@@ -182,11 +182,11 @@ export default function PhasorDiagram({
           {S > 0 ? (
             <>
               <line x1="8" y1="52" x2={8 + pLen} y2="52" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" />
-              <line x1={8 + pLen} y1="52" x2={8 + pLen} y2={52 - qLen} stroke="#9699a6" strokeWidth="2" strokeLinecap="round" />
+              <line x1={8 + pLen} y1="52" x2={8 + pLen} y2={52 - qLen} stroke="#9da2af" strokeWidth="2" strokeLinecap="round" />
               <line x1="8" y1="52" x2={8 + pLen} y2={52 - qLen} stroke={accent} strokeWidth="2" strokeLinecap="round" />
             </>
           ) : (
-            <line x1="8" y1="52" x2="140" y2="52" stroke="#353742" strokeWidth="1" strokeDasharray="2 4" />
+            <line x1="8" y1="52" x2="140" y2="52" stroke="#383c47" strokeWidth="1" strokeDasharray="2 4" />
           )}
         </svg>
 

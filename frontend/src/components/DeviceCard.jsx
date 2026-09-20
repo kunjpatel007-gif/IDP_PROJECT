@@ -89,7 +89,7 @@ function RelayRocker({ on, offline }) {
 
 function MetricWell({ label, value, unit, history, colour, tone, dimmed, scaleMax, tooltip, unitLabel }) {
   return (
-    <HoverPanel tilt={0} lift={false} glowSize={200} className="flex flex-col overflow-hidden border border-border-subtle bg-surface-subtle shadow-well">
+    <HoverPanel tilt={0} lift={false} glowSize={200} className="flex flex-col overflow-hidden border border-border-subtle bg-surface-well shadow-well">
       <div className="flex items-baseline justify-between px-3 pt-2.5">
         <span className="font-mono text-[10px] uppercase tracking-[0.05em] text-on-surface-subtle">
           {label}
@@ -319,7 +319,7 @@ export default function DeviceCard({
               value={voltage == null ? DASH : fmt(voltage, 1)}
               unit="V"
               history={voltageHistory}
-              colour="#9699a6"
+              colour="#9da2af"
               tone={unreachable ? 'text-on-surface-subtle' : 'text-on-surface'}
               dimmed={unreachable}
             />
@@ -331,7 +331,7 @@ export default function DeviceCard({
               scaleMax={threshold / 230}
               tooltip
               unitLabel="A"
-              colour={tripped ? '#f87171' : '#d97736'}
+              colour={tripped ? '#ef4444' : '#d97736'}
               tone={currentTone}
               dimmed={unreachable}
             />

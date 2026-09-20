@@ -19,7 +19,7 @@ function Well({ label, address, children, footer, alert = false, className = '' 
   return (
     <HoverPanel
       tilt={5}
-      glowColor={alert ? '248, 113, 113' : '217, 119, 54'}
+      glowColor={alert ? '239, 68, 68' : '217, 119, 54'}
       glowSize={220}
       className={`flex flex-col justify-between overflow-hidden rounded border bg-surface-card ${
         alert ? 'border-accent-red/35' : 'border-border-subtle'
@@ -149,7 +149,7 @@ export default function StatsRow({ device, powerHistory }) {
           <div className="relative -mb-px h-[22px] w-full">
             <SparklineChart
               values={powerHistory}
-              color={tripped ? '#f87171' : '#d97736'}
+              color={tripped ? '#ef4444' : '#d97736'}
               height={22}
               dimmed={unreachable}
             />

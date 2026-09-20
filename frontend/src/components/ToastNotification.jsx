@@ -22,7 +22,7 @@ const TONES = {
   },
   error: {
     border: 'border-accent-red/40',
-    accent: '#f87171',
+    accent: '#ef4444',
     text: 'text-accent-red',
   },
   info: {

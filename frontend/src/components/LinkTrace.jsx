@@ -19,7 +19,7 @@ const FLAT =
 
 export default function LinkTrace({ alive = false, colour = '#22c55e', width = 68 }) {
   const reduced = useReducedMotion();
-  const stroke = alive ? colour : '#4b4e5c';
+  const stroke = alive ? colour : '#4b5262';
 
   return (
     <svg
@@ -31,7 +31,7 @@ export default function LinkTrace({ alive = false, colour = '#22c55e', width = 6
       aria-hidden="true"
     >
       {/* Zero-volt reference */}
-      <path d="M0,10 H68" stroke="#353742" strokeOpacity="0.5" strokeWidth="1" strokeDasharray="2 3" />
+      <path d="M0,10 H68" stroke="#383c47" strokeOpacity="0.5" strokeWidth="1" strokeDasharray="2 3" />
 
       {/* Resting carrier */}
       <motion.path

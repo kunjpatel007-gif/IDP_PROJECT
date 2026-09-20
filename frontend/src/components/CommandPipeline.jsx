@@ -137,7 +137,7 @@ export default function CommandPipeline({ run, command, confirmed, onDone }) {
                         <motion.div
                           className="absolute inset-y-0 left-0 origin-left"
                           style={{
-                            background: failed ? '#f87171' : done ? '#22c55e' : '#d97736',
+                            background: failed ? '#ef4444' : done ? '#22c55e' : '#d97736',
                           }}
                           initial={{ scaleX: done ? 1 : 0 }}
                           animate={{ scaleX: done || failed ? 1 : active ? 1 : 0 }}

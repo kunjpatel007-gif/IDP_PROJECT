@@ -45,7 +45,7 @@ function Row({ label, value, tone = 'text-on-surface', hint, index = 0, trend, t
       <span className="flex items-baseline gap-2 text-right">
         {trend && trend.length > 1 ? (
           <span className="hidden h-[14px] w-[52px] self-center sm:block">
-            <SparklineChart values={trend} color={trendColor ?? '#9699a6'} height={14} capacity={10} />
+            <SparklineChart values={trend} color={trendColor ?? '#9da2af'} height={14} capacity={10} />
           </span>
         ) : null}
         <span className={`font-mono text-[12px] font-medium ${flash ? 'data-pulse' : ''} ${tone}`}>

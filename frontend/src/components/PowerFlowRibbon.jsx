@@ -76,7 +76,7 @@ export default function PowerFlowRibbon({
       const speed = 34 + Math.min(amps, 12) * 15;
       const rate = closed ? Math.min(58, 5 + amps * 8) : 0;
 
-      const accent = s.tripped ? [248, 113, 113] : [217, 119, 54];
+      const accent = s.tripped ? [239, 68, 68] : [217, 119, 54];
 
       ctx.clearRect(0, 0, width, height);
 
@@ -85,7 +85,7 @@ export default function PowerFlowRibbon({
       // ── Conductors ──────────────────────────────────────────────
       for (let i = 0; i < LANES; i += 1) {
         const y = Math.round(laneY(i)) + 0.5;
-        ctx.strokeStyle = 'rgba(53, 55, 66, 0.9)';
+        ctx.strokeStyle = 'rgba(56, 60, 71, 0.9)';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(0, y);
@@ -94,7 +94,7 @@ export default function PowerFlowRibbon({
 
         if (!closed) {
           // Downstream side, de-energised.
-          ctx.strokeStyle = 'rgba(53, 55, 66, 0.45)';
+          ctx.strokeStyle = 'rgba(56, 60, 71, 0.45)';
           ctx.setLineDash([2, 4]);
           ctx.beginPath();
           ctx.moveTo(gate + 7, y);
@@ -184,7 +184,7 @@ export default function PowerFlowRibbon({
       // ── Relay contact ───────────────────────────────────────────
       const gapTop = height * 0.18;
       const gapBottom = height * 0.82;
-      ctx.strokeStyle = closed ? `rgba(${accent[0]}, ${accent[1]}, ${accent[2]}, 0.9)` : '#4b4e5c';
+      ctx.strokeStyle = closed ? `rgba(${accent[0]}, ${accent[1]}, ${accent[2]}, 0.9)` : '#4b5262';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(gate - 7, gapTop);
@@ -232,7 +232,7 @@ export default function PowerFlowRibbon({
 
   return (
     <div className="overflow-hidden border border-border-subtle bg-surface-card">
-      <div className="flex h-7 items-center justify-between border-b border-border-subtle px-3">
+      <div className="flex h-7 items-center justify-between border-b border-border-subtle bg-surface-subtle px-3">
         <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-on-surface-muted">
           Energy flow
         </span>

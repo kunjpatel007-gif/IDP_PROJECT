@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import ScrambleText from '@/components/ScrambleText';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { fmt } from '@/lib/format';
 
@@ -117,13 +116,11 @@ export default function FaultRecord({ peakWatts, threshold, voltage = 230, power
   const pickupY = model.pickup * Math.SQRT2 * scale;
 
   return (
-    <div className="w-full border border-accent-red/30 bg-[#150d0e]/90">
-      <div className="flex items-center justify-between border-b border-accent-red/25 px-3 py-2">
-        <ScrambleText
-          text="OSCILLOGRAPHIC EVENT REPORT"
-          duration={620}
-          className="font-mono text-[10px] tracking-[0.14em] text-accent-red"
-        />
+    <div className="w-full border border-border-subtle bg-surface-subtle">
+      <div className="flex items-center justify-between border-b border-border-subtle px-3 py-2">
+        <span className="font-mono text-[10px] tracking-[0.14em] text-on-surface-muted">
+          OSCILLOGRAPHIC EVENT REPORT
+        </span>
         <span className="font-mono text-[9px] tracking-[0.06em] text-on-surface-subtle">
           64 sa/cycle · reconstructed from RMS record
         </span>
@@ -145,12 +142,12 @@ export default function FaultRecord({ peakWatts, threshold, voltage = 230, power
               y1="0"
               x2={(W * i) / 14}
               y2={H}
-              stroke="#3a2224"
+              stroke="#2e313a"
               strokeWidth="1"
               vectorEffect="non-scaling-stroke"
             />
           ))}
-          <line x1="0" y1={mid} x2={W} y2={mid} stroke="#6b3a3c" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          <line x1="0" y1={mid} x2={W} y2={mid} stroke="#4b5262" strokeWidth="1" vectorEffect="non-scaling-stroke" />
 
           {/* Pickup thresholds */}
           {pickupY > 0 ? (
@@ -171,7 +168,7 @@ export default function FaultRecord({ peakWatts, threshold, voltage = 230, power
           <motion.path
             d={path}
             fill="none"
-            stroke="#ff6b6b"
+            stroke="#ef4444"
             strokeWidth="1.6"
             strokeLinejoin="round"
             vectorEffect="non-scaling-stroke"

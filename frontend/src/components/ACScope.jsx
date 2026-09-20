@@ -97,11 +97,11 @@ export default function ACScope({
       // Phosphor persistence: veil instead of clear, so the beam leaves a
       // decaying trail the way a real storage scope does.
       ctx.globalCompositeOperation = 'source-over';
-      ctx.fillStyle = 'rgba(22, 23, 28, 0.26)';
+      ctx.fillStyle = 'rgba(22, 23, 27, 0.26)';
       ctx.fillRect(0, 0, width, height);
 
       // ── Graticule ───────────────────────────────────────────────
-      ctx.strokeStyle = 'rgba(53, 55, 66, 0.5)';
+      ctx.strokeStyle = 'rgba(56, 60, 71, 0.5)';
       ctx.lineWidth = 1;
       for (let i = 1; i < 10; i += 1) {
         const x = Math.round((width * i) / 10) + 0.5;
@@ -122,7 +122,7 @@ export default function ACScope({
       ctx.setLineDash([]);
 
       // Zero-volt axis
-      ctx.strokeStyle = 'rgba(105, 108, 122, 0.55)';
+      ctx.strokeStyle = 'rgba(104, 109, 124, 0.55)';
       ctx.beginPath();
       ctx.moveTo(0, Math.round(mid) + 0.5);
       ctx.lineTo(width, Math.round(mid) + 0.5);
@@ -197,11 +197,11 @@ export default function ACScope({
       };
 
       // Voltage first, current lagging by φ, drawn on top.
-      trace(eased.current.v, 0, 'rgba(150, 153, 166, 0.85)', 1.2, false);
+      trace(eased.current.v, 0, 'rgba(157, 162, 175, 0.85)', 1.2, false);
       trace(
         eased.current.i,
         eased.current.phi,
-        s.tripped ? '#f87171' : '#d97736',
+        s.tripped ? '#ef4444' : '#d97736',
         1.5,
         !reduced
       );
@@ -227,12 +227,12 @@ export default function ACScope({
         // Markers where the cursor crosses each trace.
         const vy = mid - Math.sin(k) * eased.current.v * usable;
         const iy = mid - Math.sin(k - eased.current.phi) * eased.current.i * usable;
-        ctx.fillStyle = 'rgba(150, 153, 166, 0.95)';
+        ctx.fillStyle = 'rgba(157, 162, 175, 0.95)';
         ctx.beginPath();
         ctx.arc(cx, vy, 2.6, 0, Math.PI * 2);
         ctx.fill();
         if (eased.current.i > 0.004) {
-          ctx.fillStyle = s.tripped ? '#f87171' : '#d97736';
+          ctx.fillStyle = s.tripped ? '#ef4444' : '#d97736';
           ctx.beginPath();
           ctx.arc(cx, iy, 2.6, 0, Math.PI * 2);
           ctx.fill();
@@ -250,11 +250,11 @@ export default function ACScope({
         const bx = cx + boxW + 10 > width ? cx - boxW - 8 : cx + 8;
         ctx.fillStyle = 'rgba(13, 14, 17, 0.92)';
         ctx.fillRect(bx, 6, boxW, boxH);
-        ctx.strokeStyle = 'rgba(53, 55, 66, 1)';
+        ctx.strokeStyle = 'rgba(56, 60, 71, 1)';
         ctx.lineWidth = 1;
         ctx.strokeRect(bx + 0.5, 6.5, boxW - 1, boxH - 1);
         lines.forEach((line, li) => {
-          ctx.fillStyle = li === 2 ? (s.tripped ? '#f87171' : '#d97736') : '#e4e5ea';
+          ctx.fillStyle = li === 2 ? (s.tripped ? '#ef4444' : '#d97736') : '#f4f4f6';
           ctx.fillText(line, bx + 6, 20 + li * 13);
         });
         ctx.restore();
@@ -293,7 +293,7 @@ export default function ACScope({
 
   return (
     <div className="flex flex-col overflow-hidden border border-border-subtle bg-surface-card">
-      <div className="flex h-7 items-center justify-between border-b border-border-subtle px-3">
+      <div className="flex h-7 items-center justify-between border-b border-border-subtle bg-surface-subtle px-3">
         <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-on-surface-muted">
           Mains waveform
         </span>
@@ -324,7 +324,7 @@ export default function ACScope({
         <span className="flex items-center gap-1.5">
           <span
             className="h-[2px] w-4"
-            style={{ background: tripped ? '#f87171' : '#d97736' }}
+            style={{ background: tripped ? '#ef4444' : '#d97736' }}
           />
           <span className="font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle">
             I · {current != null ? Number(current).toFixed(2) : '—'} Arms

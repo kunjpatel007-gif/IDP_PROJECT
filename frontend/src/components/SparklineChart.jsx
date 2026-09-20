@@ -78,7 +78,7 @@ export default function SparklineChart({
         ? '#22c55e'
         : ratio < 0.8
           ? '#d97736'
-          : '#f87171';
+          : '#ef4444';
   const stroke = dynamicColor;
 
   const step = width > 0 ? width / Math.max(1, capacity - 1) : 0;

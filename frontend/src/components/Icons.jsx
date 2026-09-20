@@ -126,8 +126,8 @@ export function LogoMark(props) {
       aria-hidden="true"
       {...props}
     >
-      <rect x="1" y="1" width="30" height="30" rx="7" stroke="#353742" strokeWidth="1.5" />
-      <circle cx="16" cy="16" r="9.5" stroke="#4b4e5c" strokeWidth="1.25" />
+      <rect x="1" y="1" width="30" height="30" rx="7" stroke="#383c47" strokeWidth="1.5" />
+      <circle cx="16" cy="16" r="9.5" stroke="#4b5262" strokeWidth="1.25" />
       <path
         d="M17.6 7.5 10.4 18.2h4.6L13.8 24.5 21.6 14.3h-4.8l.8-6.8Z"
         fill="#d97736"

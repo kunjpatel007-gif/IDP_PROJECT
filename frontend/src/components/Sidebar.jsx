@@ -14,6 +14,7 @@ const MOCK_LINKS = [
   { id: 'trip', label: 'Trip', href: '/?mock=trip' },
   { id: 'cycling', label: 'Cycling', href: '/?mock=cycling' },
   { id: 'offline', label: 'Offline', href: '/?mock=offline' },
+  { id: 'live', label: 'Live ESP (Exit Mock)', href: '/' },
 ];
 
 const LINK_LEDS = {

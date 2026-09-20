@@ -30,10 +30,10 @@ const arcPath = (radius, from, to) => {
 const toAngle = (value) => 180 + clamp(value, 0, 1) * 180;
 
 function zoneOf(value) {
-  if (value == null) return { colour: '#696c7a', label: 'No signal' };
+  if (value == null) return { colour: '#686d7c', label: 'No signal' };
   if (value > 0.85) return { colour: '#22c55e', label: 'Resistive' };
   if (value >= 0.6) return { colour: '#d97736', label: 'Reactive' };
-  return { colour: '#f87171', label: 'Poor' };
+  return { colour: '#ef4444', label: 'Poor' };
 }
 
 export default function PowerFactorGauge({ value = null, dimmed = false }) {
@@ -49,13 +49,13 @@ export default function PowerFactorGauge({ value = null, dimmed = false }) {
     <div className={`flex flex-col ${dimmed ? 'opacity-55' : ''}`}>
       <svg viewBox="0 0 168 104" className="w-full max-w-[200px]" role="img" aria-label={`Power factor ${known ? pf.toFixed(3) : 'unavailable'}`}>
         {/* Scale bands — the meaning of the scale, not decoration */}
-        <path d={arcPath(R, 180, 288)} stroke="#f87171" strokeOpacity="0.28" strokeWidth="7" fill="none" strokeLinecap="butt" />
+        <path d={arcPath(R, 180, 288)} stroke="#ef4444" strokeOpacity="0.28" strokeWidth="7" fill="none" strokeLinecap="butt" />
         <path d={arcPath(R, 288, 333)} stroke="#d97736" strokeOpacity="0.34" strokeWidth="7" fill="none" strokeLinecap="butt" />
         <path d={arcPath(R, 333, 360)} stroke="#22c55e" strokeOpacity="0.34" strokeWidth="7" fill="none" strokeLinecap="butt" />
 
         {/* Outer bezel */}
-        <path d={arcPath(R + 5.5, 180, 360)} stroke="#292a32" strokeWidth="1" fill="none" />
-        <path d={arcPath(R - 5.5, 180, 360)} stroke="#292a32" strokeWidth="1" fill="none" />
+        <path d={arcPath(R + 5.5, 180, 360)} stroke="#2e313a" strokeWidth="1" fill="none" />
+        <path d={arcPath(R - 5.5, 180, 360)} stroke="#2e313a" strokeWidth="1" fill="none" />
 
         {/* Graduations every 0.1 */}
         {Array.from({ length: 11 }, (_, i) => {
@@ -70,7 +70,7 @@ export default function PowerFactorGauge({ value = null, dimmed = false }) {
               y1={y0}
               x2={x1}
               y2={y1}
-              stroke={major ? '#9699a6' : '#4b4e5c'}
+              stroke={major ? '#9da2af' : '#4b5262'}
               strokeWidth={major ? 1.25 : 1}
             />
           );
@@ -109,15 +109,15 @@ export default function PowerFactorGauge({ value = null, dimmed = false }) {
             strokeWidth="1.75"
             strokeLinecap="round"
           />
-          <circle cx={CX} cy={CY} r="5" fill="#16171c" stroke="#353742" strokeWidth="1" />
+          <circle cx={CX} cy={CY} r="5" fill="#16171b" stroke="#383c47" strokeWidth="1" />
           <circle cx={CX} cy={CY} r="1.75" fill={zone.colour} />
         </motion.g>
 
         {/* Endpoint labels */}
-        <text x="20" y="98" fill="#696c7a" fontSize="8.5" fontFamily="JetBrains Mono, monospace">
+        <text x="20" y="98" fill="#686d7c" fontSize="8.5" fontFamily="JetBrains Mono, monospace">
           0.0
         </text>
-        <text x="136" y="98" fill="#696c7a" fontSize="8.5" fontFamily="JetBrains Mono, monospace">
+        <text x="136" y="98" fill="#686d7c" fontSize="8.5" fontFamily="JetBrains Mono, monospace">
           1.0
         </text>
       </svg>

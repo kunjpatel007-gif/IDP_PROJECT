@@ -15,8 +15,8 @@ import { clamp } from '@/lib/format';
  */
 
 const AMBER = [217, 119, 54];
-const CRIMSON = [248, 113, 113];
-const IDLE = [105, 108, 122];
+const CRIMSON = [239, 68, 68];
+const IDLE = [104, 109, 124];
 
 function mix(a, b, t) {
   const k = clamp(t, 0, 1);
@@ -98,13 +98,13 @@ export default function WaveformBar({
       ctx.clearRect(0, 0, width, height);
 
       // ── Graticule: a tick every 10% of the threshold ─────────────
-      ctx.fillStyle = 'rgba(53, 55, 66, 0.55)';
+      ctx.fillStyle = 'rgba(56, 60, 71, 0.55)';
       for (let i = 1; i < 10; i += 1) {
         ctx.fillRect(Math.round((width * i) / 10), height - 4, 1, 4);
       }
 
       // ── Dormant baseline across the untravelled span ─────────────
-      ctx.fillStyle = 'rgba(53, 55, 66, 0.75)';
+      ctx.fillStyle = 'rgba(56, 60, 71, 0.75)';
       ctx.fillRect(0, Math.round(mid), width, 1);
 
       if (state.offline) {
@@ -165,7 +165,7 @@ export default function WaveformBar({
           ctx.save();
           ctx.translate(sh.x, sh.y);
           ctx.rotate(sh.rot);
-          ctx.strokeStyle = `rgba(248, 113, 113, ${sh.life})`;
+          ctx.strokeStyle = `rgba(239, 68, 68, ${sh.life})`;
           ctx.lineWidth = 1.3;
           ctx.beginPath();
           sh.pts.forEach(([px, py], i) => (i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py)));

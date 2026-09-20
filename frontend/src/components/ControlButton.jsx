@@ -148,11 +148,11 @@ export default function ControlButton({
 
   const palette = isReset
     ? {
-        base: 'bg-accent-red-bg text-accent-red border-accent-red-deep hover:bg-accent-red-deep hover:text-white hover:border-accent-red',
+        base: 'bg-surface-well text-accent-red border-accent-red-deep hover:bg-accent-red-deep hover:text-on-surface hover:border-accent-red',
         glyph: 'currentColor',
       }
     : {
-        base: 'bg-surface-subtle text-on-surface border-border-muted hover:bg-surface-card-hover hover:border-on-surface-muted',
+        base: 'bg-surface-well text-on-surface border-border-muted hover:bg-surface-card-hover hover:border-on-surface-muted',
         glyph: 'currentColor',
       };
 
