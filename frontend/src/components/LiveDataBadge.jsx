@@ -62,7 +62,7 @@ export default function LiveDataBadge({ seq, snapshotCount, connected, silentFor
       className="fixed bottom-5 right-5 z-50 hidden items-center gap-2.5 border border-border-muted bg-surface-card/95 px-3 py-2 shadow-flyout backdrop-blur-sm sm:flex"
     >
       <StatusOrb status={connected ? 'online' : 'offline'} size={7} />
-      <div className={`flex items-baseline gap-2 ${pop ? 'seq-pop' : ''}`}>
+      <div className={`flex items-baseline gap-2 transition-opacity duration-200 ${pop ? 'opacity-100' : 'opacity-75'}`}>
         <span className="font-mono text-[10px] uppercase tracking-[0.05em] text-on-surface-subtle">
           pkt
         </span>

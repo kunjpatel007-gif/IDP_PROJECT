@@ -30,7 +30,7 @@ export default function Sidebar({ connection = 'connecting', alertCount = 0, fwV
   return (
     <>
       {/* ── Desktop rail ─────────────────────────────────────────── */}
-      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-60 select-none flex-col justify-between border-r border-border-subtle bg-surface-rail lg:flex">
+      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-60 select-none flex-col justify-between border-r border-border-subtle bg-surface-rail shadow-chassis lg:flex">
         <div className="flex flex-col">
           <div className="flex h-16 items-center gap-2.5 border-b border-border-subtle px-5">
             <LogoMark />
@@ -53,13 +53,13 @@ export default function Sidebar({ connection = 'connecting', alertCount = 0, fwV
                   onClick={() => onTabChange(id)}
                   aria-current={active ? 'page' : undefined}
                   className={`group relative flex h-10 w-full items-center gap-3 rounded px-3 text-[13px] font-medium transition-colors ${
-                    active ? 'text-primary' : 'text-on-surface-muted hover:text-on-surface'
+                    active ? 'text-primary' : 'text-on-surface-muted hover:text-on-surface hover:bg-surface-subtle/50'
                   }`}
                 >
                   {active && (
                     <motion.div
                       layoutId="active-nav"
-                      className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary"
+                      className="absolute left-0 top-2.5 h-5 w-[3px] rounded-r-full bg-primary"
                       transition={{ type: 'spring', stiffness: 450, damping: 35 }}
                     />
                   )}
@@ -86,11 +86,11 @@ export default function Sidebar({ connection = 'connecting', alertCount = 0, fwV
 
         <div className="mt-auto px-5 pb-5">
           <div className="mb-4">
-            <p className="px-1 text-[10px] font-bold tracking-wider text-on-surface-subtle uppercase mb-2">Dev Scenarios</p>
-            <div className="flex flex-col gap-1">
+            <p className="px-1 font-mono text-[9px] tracking-[0.08em] text-on-surface-subtle uppercase mb-2">Scenario Override</p>
+            <div className="flex flex-wrap gap-1.5">
               {MOCK_LINKS.map(m => (
-                <a key={m.id} href={m.href} className="text-[11px] text-on-surface-muted hover:text-primary transition-colors px-1 py-0.5">
-                  ▶ Mock: {m.label}
+                <a key={m.id} href={m.href} className="rounded border border-border-subtle bg-surface-subtle px-2 py-1 font-mono text-[10px] text-on-surface-muted hover:border-primary-border hover:text-primary transition-colors">
+                  {m.label}
                 </a>
               ))}
             </div>

@@ -12,16 +12,13 @@
     margin: 0;
     padding: 0;
     min-height: 100%;
-    background: #121316;
+    background: #0d0e11;
   }
 
   body {
     overscroll-behavior: none;
-    /* Keep content clear of notches and home indicators; zero on desktop. */
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
-    /* Lock numeral alignment so live refreshes never twitch the layout. */
     font-feature-settings: 'tnum';
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
@@ -50,7 +47,7 @@
     height: 10px;
   }
   ::-webkit-scrollbar-track {
-    background: #121316;
+    background: #0d0e11;
   }
   ::-webkit-scrollbar-thumb {
     background: #2e313a;

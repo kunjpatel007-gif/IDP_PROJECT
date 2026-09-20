@@ -18,15 +18,14 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
  */
 
 const LINES = [
-  { text: 'SMARTADAPTER CONSOLE · POST', tone: 'head' },
-  { text: 'chassis .................. ok' },
-  { text: 'display tokens ........... ok' },
-  { text: 'odometer strip ........... ok' },
-  { text: 'oscillograph ............. ok' },
-  { text: 'phasor engine ............ ok' },
-  { text: 'field solver ............. ok' },
+  { text: 'SMARTADAPTER v0.2.0 · POST', tone: 'head' },
+  { text: 'ESP32-WROOM-32D 240MHz ... ok' },
+  { text: 'UART2 PZEM-004T @ 9600 ... ACK' },
+  { text: 'relay latch 16A .......... CLOSED' },
+  { text: 'threshold ................ 1500 W' },
+  { text: 'wifi 802.11n ............. CONNECTED' },
   { text: 'firestore channel ........ opening', tone: 'pending' },
-  { text: 'telemetry/socket1 ........ subscribed', tone: 'ok' },
+  { text: 'telemetry stream ......... subscribed', tone: 'ok' },
   { text: 'console ready', tone: 'ok' },
 ];
 

@@ -109,31 +109,34 @@ export default function StatsRow({ device, powerHistory }) {
       aria-label="System summary"
     >
       <Well
-        label="Devices"
+        label="Line frequency"
         address={
           <span className="hidden font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle sm:inline">
-            bench
+            Hz
           </span>
         }
         className="min-h-[104px]"
       >
-        <div className="flex items-baseline gap-2">
-          <Counter value={1} className="font-mono text-[26px] font-medium tracking-tight text-on-surface sm:text-[30px]" />
+        <div className="flex items-baseline gap-1.5">
+          <span className={`font-mono text-[26px] font-medium tracking-tight sm:text-[30px] ${unreachable ? 'text-on-surface-subtle' : 'text-on-surface'}`}>
+            {device.frequency != null ? device.frequency.toFixed(1) : '—'}
+          </span>
+          <span className="font-mono text-[12px] text-on-surface-muted">Hz</span>
         </div>
       </Well>
 
       <Well
-        label="Online"
+        label="Power factor"
         address={<StatusOrb status={loading ? 'loading' : online ? 'online' : 'offline'} size={7} />}
         className="min-h-[104px]"
       >
-        <div className="flex items-baseline gap-2">
-          <Counter
-            value={online ? 1 : 0}
-            className={`font-mono text-[26px] font-medium tracking-tight sm:text-[30px] ${
-              online ? 'text-on-surface' : 'text-on-surface-subtle'
-            }`}
-          />
+        <div className="flex items-baseline gap-1.5">
+          <span className={`font-mono text-[26px] font-medium tracking-tight sm:text-[30px] ${
+            unreachable ? 'text-on-surface-subtle' : device.powerFactor != null && device.powerFactor < 0.85 ? 'text-accent-amber' : 'text-on-surface'
+          }`}>
+            {device.powerFactor != null ? device.powerFactor.toFixed(2) : '—'}
+          </span>
+          <span className="font-mono text-[12px] text-on-surface-muted">cos φ</span>
         </div>
       </Well>
 
