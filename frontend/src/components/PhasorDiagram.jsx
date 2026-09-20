@@ -86,7 +86,7 @@ export default function PhasorDiagram({
       onPointerEnter={(e) => e.pointerType !== 'touch' && setHeld(true)}
       onPointerLeave={() => setHeld(false)}
     >
-      <div className="flex h-7 items-center justify-between border-b border-border-subtle bg-surface-subtle px-3">
+      <div className="flex h-7 items-center justify-between border-b border-border-subtle px-3">
         <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-on-surface-muted">
           Phasors
         </span>

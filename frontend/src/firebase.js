@@ -23,7 +23,7 @@ export const firebaseConfig = {
 };
 
 /** Document id of the one physical adapter on the bench. */
-export const DEVICE_ID = 'socket1';
+export const DEVICE_ID = import.meta.env.VITE_DEVICE_ID || 'socket1';
 
 /** No telemetry for this long → the device is considered Offline. */
 export const STALE_MS = 15_000;
@@ -35,7 +35,25 @@ export const COMMAND_ROUNDTRIP_MS = 7_000;
  * Rehearsal mode. `npm run dev:mock` only — never on in a normal build, and
  * the mock module is dynamically imported so it stays out of the prod bundle.
  */
-export const MOCK = import.meta.env.VITE_MOCK === '1' || (typeof window !== 'undefined' && window.location.search.includes('mock='));
+/**
+ * Which source the console starts on. The URL and the env var only choose the
+ * *initial* value — the live source is switchable at runtime, so the console
+ * can never end up latched to rehearsal data with no way back to the adapter.
+ */
+export function initialSource() {
+  if (import.meta.env.VITE_MOCK === '1') return 'mock';
+  if (typeof window !== 'undefined' && window.location.search.includes('mock=')) return 'mock';
+  return 'live';
+}
+
+/** Drop `?mock=` from the address bar so a reload does not snap back. */
+export function clearMockFromUrl() {
+  if (typeof window === 'undefined' || !window.history?.replaceState) return;
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has('mock')) return;
+  url.searchParams.delete('mock');
+  window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+}
 
 export const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
@@ -53,8 +71,8 @@ export const commandRef = doc(db, 'commands', DEVICE_ID);
  * @param {(error: Error) => void} onError
  * @returns {() => void} unsubscribe
  */
-export function subscribeTelemetry(onData, onError) {
-  if (MOCK) {
+export function subscribeTelemetry(onData, onError, source = 'live') {
+  if (source === 'mock') {
     let stop = () => {};
     let cancelled = false;
     import('@/mock/mockTelemetry').then(({ startMockTelemetry }) => {
@@ -83,12 +101,12 @@ export function subscribeTelemetry(onData, onError) {
  *
  * @param {'ON'|'OFF'|'RESET'} command
  */
-export async function sendCommand(command) {
+export async function sendCommand(command, source = 'live') {
   if (!['ON', 'OFF', 'RESET'].includes(command)) {
     throw new Error(`Unsupported relay command: ${command}`);
   }
 
-  if (MOCK) {
+  if (source === 'mock') {
     const { mockSendCommand } = await import('@/mock/mockTelemetry');
     return mockSendCommand(command);
   }

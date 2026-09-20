@@ -70,8 +70,6 @@ export default function StatusOrb({ status = 'offline', size = 8, className = ''
         width: size,
         height: size,
         background: `radial-gradient(circle at 32% 28%, ${spec.core} 0%, ${spec.core} 34%, ${spec.edge} 100%)`,
-        // Halo ring seats the pip into the panel it is mounted on.
-        outline: '1px solid #1a1b1f',
         animation: spec.animation,
       }}
     >

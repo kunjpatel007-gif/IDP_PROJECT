@@ -2,6 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { fmt } from '@/lib/format';
+import {
+  NOMINAL_FREQUENCY,
+  NOMINAL_VOLTAGE,
+  RECONSTRUCTION_FALLBACK_PF,
+  RECONSTRUCTION_PRELOAD_RATIO,
+} from '@/lib/nominal';
 
 /**
  * Oscillographic event report.
@@ -31,16 +37,28 @@ const FAULT_CYCLES = 2.25;
 const POST_CYCLES = 1.75;
 const TAU = 0.9; // DC decay time constant, in cycles
 
-const SER = [
-  { t: '+0.000 s', label: 'Load steady', tone: 'idle' },
-  { t: '+0.060 s', label: 'Overcurrent pickup', tone: 'warn' },
-  { t: '+0.105 s', label: 'Trip asserted', tone: 'trip' },
-  { t: '+0.112 s', label: 'Contact travel', tone: 'trip' },
-  { t: '+0.119 s', label: 'Arc extinguished', tone: 'trip' },
-  { t: '+0.120 s', label: 'Load de-energised', tone: 'done' },
-];
+/**
+ * Sequence of events, derived from the reconstruction rather than recited.
+ *
+ * The adapter publishes RMS registers on a 5s cadence and keeps no event log,
+ * so no real sub-cycle timestamps exist. Every time below is computed from the
+ * model's own cycle boundaries at the line frequency — they describe the trace
+ * being drawn above them and nothing else, and the panel says so.
+ */
+function buildEvents(freq) {
+  const cycle = 1 / (freq || NOMINAL_FREQUENCY);
+  const at = (cycles) => `+${(cycles * cycle).toFixed(3)} s`;
+  return [
+    { t: at(0), label: 'Load steady', tone: 'idle' },
+    { t: at(PRE_CYCLES), label: 'Fault inception', tone: 'warn' },
+    { t: at(PRE_CYCLES + FAULT_CYCLES), label: 'Contacts part', tone: 'trip' },
+    { t: at(PRE_CYCLES + FAULT_CYCLES + 0.4), label: 'Arc extinguished', tone: 'trip' },
+    { t: at(PRE_CYCLES + FAULT_CYCLES + 0.6), label: 'Load de-energised', tone: 'done' },
+  ];
+}
 
-export default function FaultRecord({ peakWatts, threshold, voltage = 230, powerFactor = 0.95 }) {
+export default function FaultRecord({ peakWatts, threshold, voltage, powerFactor, frequency }) {
+  const SER = useMemo(() => buildEvents(frequency), [frequency]);
   const reduced = useReducedMotion();
   const [revealed, setRevealed] = useState(reduced ? SER.length : 0);
 
@@ -51,12 +69,12 @@ export default function FaultRecord({ peakWatts, threshold, voltage = 230, power
   }, [reduced]);
 
   const model = useMemo(() => {
-    const V = Number(voltage) || 230;
-    const pf = Math.min(1, Math.max(0.3, Number(powerFactor) || 0.95));
+    const V = Number(voltage) || NOMINAL_VOLTAGE;
+    const pf = Math.min(1, Math.max(0.3, Number(powerFactor) || RECONSTRUCTION_FALLBACK_PF));
     const phi = Math.acos(pf);
 
     const faultRms = peakWatts && V ? peakWatts / (V * pf) : 0;
-    const loadRms = threshold ? (threshold * 0.16) / (V * pf) : faultRms * 0.15;
+    const loadRms = threshold ? (threshold * RECONSTRUCTION_PRELOAD_RATIO) / (V * pf) : faultRms * 0.15;
 
     const total = PRE_CYCLES + FAULT_CYCLES + POST_CYCLES;
     const count = Math.round(total * SAMPLES_PER_CYCLE);
@@ -122,7 +140,7 @@ export default function FaultRecord({ peakWatts, threshold, voltage = 230, power
           OSCILLOGRAPHIC EVENT REPORT
         </span>
         <span className="font-mono text-[9px] tracking-[0.06em] text-on-surface-subtle">
-          64 sa/cycle · reconstructed from RMS record
+          64 sa/cycle · modelled from RMS record · times derived
         </span>
       </div>
 

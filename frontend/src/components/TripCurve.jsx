@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { useMemo, useState } from 'react';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { clamp } from '@/lib/format';
+import { NOMINAL_VOLTAGE, RECONSTRUCTION_FALLBACK_PF } from '@/lib/nominal';
 
 /**
  * Inverse time-current characteristic, with the socket plotted on it live.
@@ -47,13 +48,13 @@ const yOf = (t) =>
     (Math.log10(T_MAX) - Math.log10(T_MIN))) *
     (H - PAD.t - PAD.b);
 
-export default function TripCurve({ current = 0, threshold = 1500, voltage = 230, powerFactor = 0.95, energised = true }) {
+export default function TripCurve({ current = 0, threshold = 0, voltage, powerFactor, energised = true }) {
   const reduced = useReducedMotion();
   const [probe, setProbe] = useState(null);
 
   const { curve, pickup, multiple, predicted } = useMemo(() => {
-    const V = Number(voltage) || 230;
-    const pf = clamp(Number(powerFactor) || 0.95, 0.3, 1);
+    const V = Number(voltage) || NOMINAL_VOLTAGE;
+    const pf = clamp(Number(powerFactor) || RECONSTRUCTION_FALLBACK_PF, 0.3, 1);
     const Is = threshold / (V * pf);
 
     const pts = [];
@@ -74,7 +75,7 @@ export default function TripCurve({ current = 0, threshold = 1500, voltage = 230
 
   return (
     <div className="overflow-hidden border border-border-subtle bg-surface-card">
-      <div className="flex h-7 items-center justify-between border-b border-border-subtle bg-surface-subtle px-3">
+      <div className="flex h-7 items-center justify-between border-b border-border-subtle px-3">
         <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-on-surface-muted">
           Trip curve
         </span>

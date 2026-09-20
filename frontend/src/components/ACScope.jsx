@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { SCOPE_CURRENT_FLOOR, SCOPE_VOLTAGE_FULL_SCALE } from '@/lib/nominal';
 
 /**
  * Dual-trace mains oscilloscope.
@@ -82,8 +83,8 @@ export default function ACScope({
 
       // Targets: voltage normalised against a 260 V full scale, current
       // against the highest of 10 A or whatever it is actually drawing.
-      const vTarget = s.energised ? Math.min(1, (s.voltage ?? 0) / 260) : 0;
-      const iScale = Math.max(10, (s.current ?? 0) * 1.25);
+      const vTarget = s.energised ? Math.min(1, (s.voltage ?? 0) / SCOPE_VOLTAGE_FULL_SCALE) : 0;
+      const iScale = Math.max(SCOPE_CURRENT_FLOOR, (s.current ?? 0) * 1.25);
       const iTarget = s.energised && !s.tripped ? Math.min(1, (s.current ?? 0) / iScale) : 0;
       const phiTarget = Math.acos(Math.min(1, Math.max(0, s.powerFactor ?? 1)));
 
@@ -293,7 +294,7 @@ export default function ACScope({
 
   return (
     <div className="flex flex-col overflow-hidden border border-border-subtle bg-surface-card">
-      <div className="flex h-7 items-center justify-between border-b border-border-subtle bg-surface-subtle px-3">
+      <div className="flex h-7 items-center justify-between border-b border-border-subtle px-3">
         <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-on-surface-muted">
           Mains waveform
         </span>

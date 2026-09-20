@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { subscribeTelemetry, parseLastSeen, STALE_MS } from '@/firebase';
+import { NOMINAL_VOLTAGE, RECONSTRUCTION_FALLBACK_PF } from '@/lib/nominal';
 
 /**
  * Device status is derived, never stored.
@@ -11,7 +12,7 @@ import { subscribeTelemetry, parseLastSeen, STALE_MS } from '@/firebase';
  * Staleness is time-based, so a 1s ticker re-derives it even when Firestore
  * sends nothing. A device that dies silently must still go grey on its own.
  */
-export function useDevice() {
+export function useDevice(source = 'live') {
   const [raw, setRaw] = useState(null);
   const [connection, setConnection] = useState('connecting'); // connecting | live | empty | error
   const [error, setError] = useState(null);
@@ -23,12 +24,20 @@ export function useDevice() {
   // Last few readings while energised — the source of the peak trip load.
   const recentPower = useRef([]);
   // Power factor and voltage while the socket is actually carrying load.
-  const lastEnergised = useRef({ voltage: 230, powerFactor: 0.95 });
+  const lastEnergised = useRef({ voltage: NOMINAL_VOLTAGE, powerFactor: RECONSTRUCTION_FALLBACK_PF });
   const [tripPeak, setTripPeak] = useState(null);
   const [tripContext, setTripContext] = useState(null);
 
   // ── Live subscription ───────────────────────────────────────────
   useEffect(() => {
+    // A source switch must not carry the other source's history across.
+    setRaw(null);
+    setConnection('connecting');
+    setError(null);
+    setTripPeak(null);
+    setTripContext(null);
+    recentPower.current = [];
+    seenFirst.current = false;
     const unsubscribe = subscribeTelemetry(
       (data) => {
         if (!data) {
@@ -53,8 +62,8 @@ export function useDevice() {
           recentPower.current = [...recentPower.current, watts].slice(-3);
           if (watts > 40) {
             lastEnergised.current = {
-              voltage: Number(data.voltage) || 230,
-              powerFactor: Number(data.power_factor) || 0.95,
+              voltage: Number(data.voltage) || NOMINAL_VOLTAGE,
+              powerFactor: Number(data.power_factor) || RECONSTRUCTION_FALLBACK_PF,
             };
           }
         }
@@ -70,10 +79,13 @@ export function useDevice() {
         console.error('[SmartAdapter] Firestore subscription error:', err);
         setConnection('error');
         setError(err);
-      }
+      },
+      source
     );
     return unsubscribe;
-  }, []);
+    // Re-subscribing on source change is the whole point: flipping back to
+    // live tears down the mock generator and reconnects to Firestore.
+  }, [source]);
 
   // ── Stale-detection ticker ──────────────────────────────────────
   useEffect(() => {
@@ -106,14 +118,18 @@ export function useDevice() {
     const unreachable = raw != null && isStale;
     const staleTripped = tripped && unreachable;
 
-    const threshold = Number(raw?.threshold ?? 1500) || 1500;
+    const publishedThreshold = Number(raw?.threshold);
+    const thresholdKnown = Number.isFinite(publishedThreshold) && publishedThreshold > 0;
+    // Scaling still needs a number; the flag is what the UI reads before
+    // presenting it as though the adapter had said so.
+    const threshold = thresholdKnown ? publishedThreshold : 0;
     const power = offline ? 0 : Number(raw?.power ?? 0);
 
     // The card headline and the utilisation trace show the load that opened
     // the breaker, not the ~0 W a de-energised socket reports afterwards.
     const peakTripWatts = tripped ? (tripPeak ?? power) : null;
     const displayPower = tripped ? peakTripWatts : power;
-    const utilisation = Math.max(0, (displayPower / threshold) * 100);
+    const utilisation = threshold > 0 ? Math.max(0, (displayPower / threshold) * 100) : 0;
 
     return {
       raw,
@@ -125,8 +141,8 @@ export function useDevice() {
       staleTripped,
       loading: status === 'loading',
 
-      deviceName: raw?.device_name ?? 'Living Room Socket',
-      deviceId: raw?.device_id ?? 'socket1',
+      deviceName: raw?.device_name ?? null,
+      deviceId: raw?.device_id ?? null,
       fwVersion: raw?.fw_version ?? null,
 
       power,
@@ -140,6 +156,7 @@ export function useDevice() {
       frequency: raw?.frequency ?? null,
       powerFactor: raw?.power_factor ?? null,
       threshold,
+      thresholdKnown,
       utilisation,
       utilisationClamped: Math.min(100, utilisation),
       overloaded: utilisation >= 100,

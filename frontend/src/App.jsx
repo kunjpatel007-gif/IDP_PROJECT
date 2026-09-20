@@ -2,12 +2,8 @@ import { useCallback, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 
 import BootSequence from '@/components/BootSequence';
-import ScrambleText from '@/components/ScrambleText';
 import CommandPipeline from '@/components/CommandPipeline';
 import DeviceCard from '@/components/DeviceCard';
-import ElectricField from '@/components/ElectricField';
-import ParticleBackground from '@/components/ParticleBackground';
-import StatusStrip from '@/components/StatusStrip';
 
 
 import LiveDataBadge from '@/components/LiveDataBadge';
@@ -18,9 +14,11 @@ import { useToast } from '@/components/ToastNotification';
 import { IconWarning } from '@/components/Icons';
 
 import { useDevice } from '@/hooks/useDevice';
+import { useSessionStats } from '@/hooks/useSessionStats';
+import SourceSwitch from '@/components/SourceSwitch';
 import { useSparkline } from '@/hooks/useSparkline';
-import { sendCommand } from '@/firebase';
-import { fmtClock } from '@/lib/format';
+import { initialSource, sendCommand } from '@/firebase';
+import { fmt, fmtClock, rssiQuality } from '@/lib/format';
 
 const COMMAND_COPY = {
   ON: { title: 'Close relay queued', detail: 'The adapter polls every 2 seconds. Relay state below is the confirmation.' },
@@ -44,30 +42,24 @@ function describeError(error) {
 }
 
 export default function App() {
-  const device = useDevice();
+  const [source, setSource] = useState(initialSource);
+  const device = useDevice(source);
+  const session = useSessionStats(device);
   const { push } = useToast();
 
   const [commandInFlight, setCommandInFlight] = useState(false);
   const [pipeline, setPipeline] = useState(null); // { run, command, expectRelay }
-  const [shaking, setShaking] = useState(false);
-  const shakeTimer = useRef(null);
 
   // Traces are keyed on `seq` so the 1s stale ticker cannot inject phantom points.
   const powerHistory = useSparkline(device.offline ? 0 : device.power, device.seq, 20);
   const voltageHistory = useSparkline(device.voltage, device.seq, 20);
   const currentHistory = useSparkline(device.current, device.seq, 20);
 
-  const handleShake = useCallback(() => {
-    clearTimeout(shakeTimer.current);
-    setShaking(true);
-    shakeTimer.current = setTimeout(() => setShaking(false), 650);
-  }, []);
-
   const handleCommand = useCallback(
     async (command) => {
       setCommandInFlight(true);
       try {
-        await sendCommand(command);
+        await sendCommand(command, source);
         // Stage the round trip; the last hop closes on a real snapshot.
         setPipeline({ run: Date.now(), command, expectRelay: command !== 'OFF' });
         const copy = COMMAND_COPY[command];
@@ -80,7 +72,7 @@ export default function App() {
         setCommandInFlight(false);
       }
     },
-    [push]
+    [push, source]
   );
 
   const alertCount = device.tripped ? 1 : 0;
@@ -88,17 +80,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-surface text-on-surface">
-      <ParticleBackground
-        intensity={device.unreachable ? 0 : Math.min(1, device.utilisation / 100)}
-        scatter={device.tripped}
-      />
-
-      <ElectricField
-        intensity={device.unreachable ? 0 : Math.min(1, device.utilisation / 100)}
-        overloaded={device.overloaded}
-        tripped={device.tripped}
-      />
-
       
 
       
@@ -106,10 +87,10 @@ export default function App() {
       <TripOverlay
         tripped={device.tripped}
         peakWatts={device.peakTripWatts ?? device.power}
-        voltage={device.faultVoltage ?? device.voltage ?? 230}
-        powerFactor={device.faultPowerFactor ?? device.powerFactor ?? 0.95}
+        voltage={device.faultVoltage ?? device.voltage}
+        powerFactor={device.faultPowerFactor ?? device.powerFactor}
+        frequency={device.frequency}
         threshold={device.threshold}
-        onShake={handleShake}
       />
 
       <Sidebar
@@ -123,21 +104,24 @@ export default function App() {
 
       <BootSequence />
 
-      <div className={`relative z-10 lg:pl-60 ${shaking ? 'chassis-shake' : ''}`}>
+      <div className={`relative z-10 lg:pl-60 `}>
         <main className="mx-auto max-w-[1180px] px-4 py-6 sm:px-6 lg:px-10 lg:py-9">
+
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <SourceSwitch source={source} onChange={setSource} live={device.connection === 'live'} />
+            {source === 'mock' ? (
+              <span className="font-mono text-[11px] tracking-[0.04em] text-accent-amber">
+                Rehearsal generator — switch to Adapter for ESP32 telemetry
+              </span>
+            ) : null}
+          </div>
 
           {/* ── Tabs ─────────────────────────────────────────────── */}
           {activeTab === 'overview' && (
             <div className="animate-fade-in">
               {/* ── Header ─────────────────────────────────────────────── */}
           <header className="mb-7">
-            <ScrambleText
-              as="h1"
-              text="DASHBOARD"
-              duration={760}
-              delay={120}
-              className="block font-display text-[26px] font-bold uppercase tracking-[0.1em] text-on-surface lg:text-[30px]"
-            />
+            <h1 className="font-display text-[22px] font-semibold tracking-tight text-on-surface lg:text-[26px]">Dashboard</h1>
           </header>
 
           {/* ── Link fault banner ──────────────────────────────────── */}
@@ -185,8 +169,7 @@ export default function App() {
             onDone={() => setPipeline(null)}
           />
 
-          <StatusStrip device={device} />
-              <StatsRow device={device} powerHistory={powerHistory} />
+          <StatsRow device={device} powerHistory={powerHistory} />
 
           {/* ── Adapter bay ────────────────────────────────────────── */}
           <section className="mt-7">
@@ -206,28 +189,54 @@ export default function App() {
 
           {activeTab === 'historical' && (
             <div className="animate-fade-in">
-              <header className="mb-7">
-                <ScrambleText as="h1" text="HISTORICAL & ANALYTICS" duration={760} className="block font-display text-[26px] font-bold uppercase tracking-[0.1em] text-on-surface lg:text-[30px]" />
+              <header className="mb-2">
+                <h1 className="font-display text-[22px] font-semibold tracking-tight text-on-surface lg:text-[26px]">Historical &amp; Analytics</h1>
               </header>
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="rounded border border-border-subtle bg-surface-card p-6">
-                  <h3 className="font-display text-sm font-semibold text-primary mb-2">Daily Energy Consumption</h3>
-                  <p className="text-3xl font-mono text-on-surface tracking-tight">0.00 <span className="text-sm text-on-surface-muted">kWh</span></p>
-                  <p className="text-xs text-on-surface-muted mt-2">Requires backend time-series accumulator</p>
+              <p className="mb-6 max-w-[62ch] text-[12px] leading-[18px] text-on-surface-muted">
+                Accumulated by this console since the page was opened. The adapter publishes an
+                instantaneous snapshot and keeps no history, so everything here is scoped to the
+                current session rather than to the device's lifetime.
+              </p>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div className="border border-border-subtle bg-surface-card">
+                  <div className="flex h-7 items-center justify-between border-b border-border-subtle bg-surface-subtle px-3">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-on-surface-muted">Energy this session</span>
+                    <span className="font-mono text-[9px] tracking-[0.05em] text-on-surface-subtle">integrated</span>
+                  </div>
+                  <div className="px-3 py-4">
+                    <p className="font-mono text-[26px] leading-none tracking-tight text-on-surface">{session.energyWh >= 1000 ? (session.energyWh / 1000).toFixed(3) : session.energyWh.toFixed(2)}<span className="ml-1.5 text-[12px] text-on-surface-muted">{session.energyWh >= 1000 ? "kWh" : "Wh"}</span></p>
+                    <p className="mt-2 font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle">Power integrated over observed intervals</p>
+                  </div>
                 </div>
-                <div className="rounded border border-border-subtle bg-surface-card p-6">
-                  <h3 className="font-display text-sm font-semibold text-primary mb-2">Peak Power Recorded</h3>
-                  <p className="text-3xl font-mono text-on-surface tracking-tight">0.0 <span className="text-sm text-on-surface-muted">W</span></p>
-                  <p className="text-xs text-on-surface-muted mt-2">Requires backend historical peak tracking</p>
+                <div className="border border-border-subtle bg-surface-card">
+                  <div className="flex h-7 items-center justify-between border-b border-border-subtle bg-surface-subtle px-3">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-on-surface-muted">Peak observed</span>
+                    <span className="font-mono text-[9px] tracking-[0.05em] text-on-surface-subtle">session max</span>
+                  </div>
+                  <div className="px-3 py-4">
+                    <p className="font-mono text-[26px] leading-none tracking-tight text-primary">{session.peakPower != null ? fmt(session.peakPower) : "—"}<span className="ml-1.5 text-[12px] text-on-surface-muted">W</span></p>
+                    <p className="mt-2 font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle">{session.peakAt ? `at ${fmtClock(session.peakAt)}` : "no samples yet"}</p>
+                  </div>
                 </div>
-                <div className="rounded border border-border-subtle bg-surface-card p-6">
-                  <h3 className="font-display text-sm font-semibold text-primary mb-2">Average Power</h3>
-                  <p className="text-3xl font-mono text-on-surface tracking-tight">0.0 <span className="text-sm text-on-surface-muted">W</span></p>
-                  <p className="text-xs text-on-surface-muted mt-2">Requires backend rolling aggregation</p>
+                <div className="border border-border-subtle bg-surface-card">
+                  <div className="flex h-7 items-center justify-between border-b border-border-subtle bg-surface-subtle px-3">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-on-surface-muted">Mean power</span>
+                    <span className="font-mono text-[9px] tracking-[0.05em] text-on-surface-subtle">arithmetic</span>
+                  </div>
+                  <div className="px-3 py-4">
+                    <p className="font-mono text-[26px] leading-none tracking-tight text-on-surface">{session.meanPower != null ? fmt(session.meanPower) : "—"}<span className="ml-1.5 text-[12px] text-on-surface-muted">W</span></p>
+                    <p className="mt-2 font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle">{`over ${session.samples} packets`}</p>
+                  </div>
                 </div>
-                <div className="rounded border border-border-subtle bg-surface-card p-6">
-                  <h3 className="font-display text-sm font-semibold text-primary mb-2">Usage Patterns</h3>
-                  <p className="text-sm text-on-surface-muted">Historical patterns not available. Require time-series database integration.</p>
+                <div className="border border-border-subtle bg-surface-card">
+                  <div className="flex h-7 items-center justify-between border-b border-border-subtle bg-surface-subtle px-3">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-on-surface-muted">Rail excursion</span>
+                    <span className="font-mono text-[9px] tracking-[0.05em] text-on-surface-subtle">min / max</span>
+                  </div>
+                  <div className="px-3 py-4">
+                    <p className="font-mono text-[26px] leading-none tracking-tight text-on-surface">{session.minVoltage != null ? `${session.minVoltage.toFixed(1)}–${session.maxVoltage.toFixed(1)}` : "—"}<span className="ml-1.5 text-[12px] text-on-surface-muted">V</span></p>
+                    <p className="mt-2 font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle">Supply variation seen this session</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -235,22 +244,69 @@ export default function App() {
 
           {activeTab === 'protection' && (
             <div className="animate-fade-in">
-              <header className="mb-7">
-                <ScrambleText as="h1" text="PROTECTION & ALERTS" duration={760} className="block font-display text-[26px] font-bold uppercase tracking-[0.1em] text-on-surface lg:text-[30px]" />
+              <header className="mb-2">
+                <h1 className="font-display text-[22px] font-semibold tracking-tight text-on-surface lg:text-[26px]">Protection &amp; Alerts</h1>
               </header>
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="rounded border border-border-subtle bg-surface-card p-6">
-                  <h3 className="font-display text-sm font-semibold text-primary mb-4">Hardware Threshold</h3>
-                  <div className="flex items-center gap-4">
-                    <input type="number" disabled value={device.threshold || 0} className="bg-surface-subtle border border-border-muted rounded px-4 py-2 font-mono text-on-surface flex-1" />
-                    <button disabled className="bg-border-muted text-on-surface-muted px-4 py-2 rounded font-medium text-sm">Edit (Requires FW Update)</button>
+              <p className="mb-6 max-w-[62ch] text-[12px] leading-[18px] text-on-surface-muted">
+                Present protection state and what this console has witnessed since it was opened.
+              </p>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div className="border border-border-subtle bg-surface-card">
+                  <div className="flex h-7 items-center justify-between border-b border-border-subtle bg-surface-subtle px-3">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-on-surface-muted">Breaker state</span>
+                    <span className="font-mono text-[9px] tracking-[0.05em] text-on-surface-subtle">relay</span>
                   </div>
-                  <p className="text-xs text-on-surface-muted mt-3">Currently read-only. A SET_THRESHOLD command must be added to the ESP32 code to enable edits.</p>
+                  <div className="px-3 py-4">
+                    <p className={`font-mono text-[26px] leading-none tracking-tight ${device.tripped ? "text-accent-red" : "text-accent-green"}`}>{device.tripped ? "OPEN" : device.relayOn ? "CLOSED" : "OPEN"}<span className="ml-1.5 text-[12px] text-on-surface-muted"></span></p>
+                    <p className="mt-2 font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle">{device.tripped ? "latched on overcurrent" : "no active fault"}</p>
+                  </div>
                 </div>
-                <div className="rounded border border-border-subtle bg-surface-card p-6">
-                  <h3 className="font-display text-sm font-semibold text-primary mb-2">Overload Trips</h3>
-                  <p className="text-3xl font-mono text-accent-red tracking-tight">0 <span className="text-sm text-on-surface-muted">events</span></p>
-                  <p className="text-xs text-on-surface-muted mt-2">Persistent trip logging requires Firestore history array.</p>
+                <div className="border border-border-subtle bg-surface-card">
+                  <div className="flex h-7 items-center justify-between border-b border-border-subtle bg-surface-subtle px-3">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-on-surface-muted">Trips this session</span>
+                    <span className="font-mono text-[9px] tracking-[0.05em] text-on-surface-subtle">observed</span>
+                  </div>
+                  <div className="px-3 py-4">
+                    <p className={`font-mono text-[26px] leading-none tracking-tight ${session.trips > 0 ? "text-accent-red" : "text-on-surface"}`}>{session.trips}<span className="ml-1.5 text-[12px] text-on-surface-muted">{session.trips === 1 ? "event" : "events"}</span></p>
+                    <p className="mt-2 font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle">Counted from live transitions</p>
+                  </div>
+                </div>
+                <div className="border border-border-subtle bg-surface-card">
+                  <div className="flex h-7 items-center justify-between border-b border-border-subtle bg-surface-subtle px-3">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-on-surface-muted">Present load</span>
+                    <span className="font-mono text-[9px] tracking-[0.05em] text-on-surface-subtle">of threshold</span>
+                  </div>
+                  <div className="px-3 py-4">
+                    <p className={`font-mono text-[26px] leading-none tracking-tight ${device.overloaded ? "text-accent-red" : device.utilisation > 80 ? "text-accent-amber" : "text-on-surface"}`}>{device.thresholdKnown ? Math.round(device.utilisation) : "—"}<span className="ml-1.5 text-[12px] text-on-surface-muted">%</span></p>
+                    <p className="mt-2 font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle">{device.thresholdKnown ? `${fmt(Math.max(0, device.threshold - device.power))} W headroom` : "threshold unknown"}</p>
+                  </div>
+                </div>
+                <div className="border border-border-subtle bg-surface-card">
+                  <div className="flex h-7 items-center justify-between border-b border-border-subtle bg-surface-subtle px-3">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-on-surface-muted">Peak trip load</span>
+                    <span className="font-mono text-[9px] tracking-[0.05em] text-on-surface-subtle">latched</span>
+                  </div>
+                  <div className="px-3 py-4">
+                    <p className="font-mono text-[26px] leading-none tracking-tight text-accent-red">{device.peakTripWatts != null ? fmt(device.peakTripWatts) : "—"}<span className="ml-1.5 text-[12px] text-on-surface-muted">W</span></p>
+                    <p className="mt-2 font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle">Frozen at the last inception</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 border border-border-subtle bg-surface-card">
+                <div className="flex h-7 items-center justify-between border-b border-border-subtle bg-surface-subtle px-3">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-on-surface-muted">Trip setting</span>
+                  <span className="font-mono text-[9px] tracking-[0.05em] text-on-surface-subtle">read-only</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-4 px-3 py-4">
+                  <span className="font-mono text-[18px] text-on-surface">
+                    {device.thresholdKnown ? `${fmt(device.threshold)} W` : 'not published'}
+                  </span>
+                  <p className="max-w-[54ch] text-[11px] leading-[16px] text-on-surface-muted">
+                    The threshold lives in firmware. Changing it from here needs a SET_THRESHOLD
+                    command added to the ESP32 sketch and the command handler, which is outside this
+                    dashboard.
+                  </p>
                 </div>
               </div>
             </div>
@@ -258,25 +314,52 @@ export default function App() {
 
           {activeTab === 'network' && (
             <div className="animate-fade-in">
-              <header className="mb-7">
-                <ScrambleText as="h1" text="NETWORK & DEVICE" duration={760} className="block font-display text-[26px] font-bold uppercase tracking-[0.1em] text-on-surface lg:text-[30px]" />
+              <header className="mb-2">
+                <h1 className="font-display text-[22px] font-semibold tracking-tight text-on-surface lg:text-[26px]">Network &amp; Device</h1>
               </header>
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="rounded border border-border-subtle bg-surface-card p-6">
-                  <h3 className="font-display text-sm font-semibold text-primary mb-4">Device Identity</h3>
-                  <div className="space-y-3 font-mono text-sm">
-                    <div className="flex justify-between border-b border-border-muted pb-2"><span className="text-on-surface-muted">Name:</span> <span className="text-on-surface">Living Room Socket</span></div>
-                    <div className="flex justify-between border-b border-border-muted pb-2"><span className="text-on-surface-muted">ID:</span> <span className="text-on-surface">{device.deviceId || 'socket1'}</span></div>
-                    <div className="flex justify-between border-b border-border-muted pb-2"><span className="text-on-surface-muted">Status:</span> <span className={device.connection === 'live' ? 'text-accent-green' : 'text-accent-red'}>{device.connection === 'live' ? 'ONLINE' : 'OFFLINE'}</span></div>
-                    <div className="flex justify-between pb-2"><span className="text-on-surface-muted">IP Address:</span> <span className="text-on-surface">N/A (Update FW)</span></div>
+              <p className="mb-6 max-w-[62ch] text-[12px] leading-[18px] text-on-surface-muted">
+                Identity and link quality as reported by the adapter. Fields the firmware does not
+                publish are shown as unreported rather than filled in.
+              </p>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div className="border border-border-subtle bg-surface-card">
+                  <div className="flex h-7 items-center justify-between border-b border-border-subtle bg-surface-subtle px-3">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-on-surface-muted">Identity</span>
+                    <span className="font-mono text-[9px] tracking-[0.05em] text-on-surface-subtle">device_name</span>
+                  </div>
+                  <div className="px-3 py-4">
+                    <p className="font-mono text-[26px] leading-none tracking-tight text-on-surface">{device.deviceName ?? "unnamed"}<span className="ml-1.5 text-[12px] text-on-surface-muted"></span></p>
+                    <p className="mt-2 font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle">{device.deviceId ? `id ${device.deviceId}` : "id unreported"}</p>
                   </div>
                 </div>
-                <div className="rounded border border-border-subtle bg-surface-card p-6">
-                  <h3 className="font-display text-sm font-semibold text-primary mb-4">Diagnostics</h3>
-                  <div className="space-y-3 font-mono text-sm">
-                    <div className="flex justify-between border-b border-border-muted pb-2"><span className="text-on-surface-muted">FW Version:</span> <span className="text-on-surface">{device.fwVersion || 'Unknown'}</span></div>
-                    <div className="flex justify-between border-b border-border-muted pb-2"><span className="text-on-surface-muted">RSSI:</span> <span className="text-on-surface">{device.rssi || 0} dBm</span></div>
-                    <div className="flex justify-between pb-2"><span className="text-on-surface-muted">Free Heap:</span> <span className="text-on-surface">{device.freeHeap || 0} bytes</span></div>
+                <div className="border border-border-subtle bg-surface-card">
+                  <div className="flex h-7 items-center justify-between border-b border-border-subtle bg-surface-subtle px-3">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-on-surface-muted">Firmware</span>
+                    <span className="font-mono text-[9px] tracking-[0.05em] text-on-surface-subtle">fw_version</span>
+                  </div>
+                  <div className="px-3 py-4">
+                    <p className="font-mono text-[26px] leading-none tracking-tight text-on-surface">{device.fwVersion ?? "unreported"}<span className="ml-1.5 text-[12px] text-on-surface-muted"></span></p>
+                    <p className="mt-2 font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle">{source === "mock" ? "rehearsal generator" : "ESP32 + PZEM-004T"}</p>
+                  </div>
+                </div>
+                <div className="border border-border-subtle bg-surface-card">
+                  <div className="flex h-7 items-center justify-between border-b border-border-subtle bg-surface-subtle px-3">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-on-surface-muted">Radio</span>
+                    <span className="font-mono text-[9px] tracking-[0.05em] text-on-surface-subtle">rssi</span>
+                  </div>
+                  <div className="px-3 py-4">
+                    <p className="font-mono text-[26px] leading-none tracking-tight text-on-surface">{device.rssi != null ? device.rssi : "—"}<span className="ml-1.5 text-[12px] text-on-surface-muted">dBm</span></p>
+                    <p className="mt-2 font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle">{rssiQuality(device.rssi).label}</p>
+                  </div>
+                </div>
+                <div className="border border-border-subtle bg-surface-card">
+                  <div className="flex h-7 items-center justify-between border-b border-border-subtle bg-surface-subtle px-3">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-on-surface-muted">Free heap</span>
+                    <span className="font-mono text-[9px] tracking-[0.05em] text-on-surface-subtle">free_heap</span>
+                  </div>
+                  <div className="px-3 py-4">
+                    <p className="font-mono text-[26px] leading-none tracking-tight text-on-surface">{device.freeHeap != null ? (device.freeHeap / 1024).toFixed(1) : "—"}<span className="ml-1.5 text-[12px] text-on-surface-muted">kB</span></p>
+                    <p className="mt-2 font-mono text-[10px] tracking-[0.04em] text-on-surface-subtle">{`${session.samples} packets this session`}</p>
                   </div>
                 </div>
               </div>

@@ -1,0 +1,12 @@
+
+TELEMETRY AUDIT — 2 findings
+blocker 0 · warn 2 · scale 0
+
+── WARN ────────────────────────────────────────────────
+  src/lib/nominal.js:15
+    nominal mains voltage used as a fallback for live voltage
+    > export const NOMINAL_VOLTAGE = 230;
+  src/lib/nominal.js:32
+    power factor assumed; device publishes power_factor
+    > export const RECONSTRUCTION_FALLBACK_PF = 0.95;
+

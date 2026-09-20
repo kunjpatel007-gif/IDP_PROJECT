@@ -135,7 +135,7 @@ export default function ElectricField({ intensity = 0, overloaded = false, tripp
       ctx.fillRect(0, 0, w, h);
 
       const speed = 32 + load * 124;
-      const alpha = 0.07 + load * 0.2;
+      const alpha = 0.14 + load * 0.42;
       const colour = s.tripped || s.overloaded ? [239, 68, 68] : [217, 119, 54];
       const cold = [104, 109, 124];
 
@@ -191,7 +191,7 @@ export default function ElectricField({ intensity = 0, overloaded = false, tripp
       // Constellation mesh — sampled, not exhaustive: an O(n²) pass over 600
       // tracers would cost more than the field solve itself.
       const linkDist = 74 + load * 34;
-      ctx.strokeStyle = `rgba(217, 119, 54, ${0.018 + load * 0.035})`;
+      ctx.strokeStyle = `rgba(217, 119, 54, ${0.04 + load * 0.08})`;
       for (let i = 0; i < tracers.length; i += 3) {
         const a = tracers[i];
         for (let j = i + 3; j < Math.min(i + 27, tracers.length); j += 3) {
@@ -243,7 +243,7 @@ export default function ElectricField({ intensity = 0, overloaded = false, tripp
         className="absolute inset-0"
         style={{
           background:
-            'radial-gradient(ellipse 120% 95% at 50% 40%, rgba(18,19,22,0.46) 20%, rgba(18,19,22,0.78) 78%, rgba(18,19,22,0.94) 100%)',
+            'radial-gradient(ellipse 120% 95% at 50% 40%, rgba(18,19,22,0.18) 20%, rgba(18,19,22,0.62) 78%, rgba(18,19,22,0.88) 100%)',
         }}
       />
     </div>

@@ -38,6 +38,7 @@ export default {
         'accent-offline': '#4b5262', // de-energised, unassigned
       },
       fontFamily: {
+        sans: ['JetBrains Mono', 'ui-monospace', 'monospace'],
         body: ['JetBrains Mono', 'ui-monospace', 'monospace'],
         display: ['JetBrains Mono', 'ui-monospace', 'monospace'],
         mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],

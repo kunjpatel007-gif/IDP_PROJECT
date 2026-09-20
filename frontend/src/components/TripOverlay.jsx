@@ -8,21 +8,21 @@ import { fmt } from '@/lib/format';
 /**
  * Breaker operation report.
  *
- * Fires strictly on the false → true edge of `tripped` — the event is the
- * transition, not the state, so a page load that finds the breaker already
- * open shows nothing.
+ * Fires strictly on the false to true edge of `tripped` — the event is the
+ * transition, so a page load that finds the breaker already open shows
+ * nothing.
  *
- * Deliberately undramatic. The console dims, a rule draws across the top, and
- * the event report settles in; the oscillogram draws itself on because that is
- * the measurement arriving, and that is the only motion here that carries
- * information. No arc, no tearing, no shake. A protection device that has just
- * interrupted a fault states what it recorded — the seriousness is in the
- * numbers, and anything staged on top of them undercuts it.
+ * Deliberately undramatic. The console dims, a fault rule draws across the
+ * head of the panel, and the report settles in. The oscillogram draws itself
+ * on because that is the measurement arriving, and it is the only motion here
+ * carrying information. No arc, no tearing, no shake: the seriousness of an
+ * interruption is in the numbers, and staging effects over a fault record
+ * undercuts it.
  */
 
 const HOLD_MS = 4200;
 
-export default function TripOverlay({ tripped, peakWatts, threshold, voltage, powerFactor }) {
+export default function TripOverlay({ tripped, peakWatts, threshold, voltage, powerFactor, frequency }) {
   const reduced = useReducedMotion();
   const previous = usePrevious(tripped);
   const [open, setOpen] = useState(false);
@@ -39,8 +39,7 @@ export default function TripOverlay({ tripped, peakWatts, threshold, voltage, po
 
   useEffect(() => () => clearTimeout(dismiss.current), []);
 
-  const overshoot =
-    peakWatts != null && threshold ? Math.round((peakWatts / threshold) * 100) : null;
+  const overshoot = peakWatts != null && threshold ? Math.round((peakWatts / threshold) * 100) : null;
 
   return (
     <AnimatePresence>
@@ -56,7 +55,6 @@ export default function TripOverlay({ tripped, peakWatts, threshold, voltage, po
           transition={{ duration: reduced ? 0 : 0.28, ease: 'easeOut' }}
           onClick={() => setOpen(false)}
         >
-          {/* Console recedes rather than flashing. */}
           <div className="absolute inset-0 bg-surface/92 backdrop-blur-[3px]" />
 
           <motion.div
@@ -65,7 +63,6 @@ export default function TripOverlay({ tripped, peakWatts, threshold, voltage, po
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
           >
-            {/* Fault rule across the head of the panel */}
             <motion.div
               className="h-[2px] origin-left bg-accent-red-deep"
               initial={reduced ? { scaleX: 1 } : { scaleX: 0 }}
@@ -83,10 +80,9 @@ export default function TripOverlay({ tripped, peakWatts, threshold, voltage, po
                   overcurrent
                 </span>
               </div>
-
               <div className="flex items-baseline gap-2 font-mono">
                 <span className="text-[22px] font-medium text-accent-red">
-                  {peakWatts != null ? fmt(peakWatts) : '—'}
+                  {peakWatts != null ? fmt(peakWatts) : '\u2014'}
                 </span>
                 <span className="text-[12px] text-on-surface-muted">W</span>
                 {overshoot != null ? (
@@ -103,6 +99,7 @@ export default function TripOverlay({ tripped, peakWatts, threshold, voltage, po
                 threshold={threshold}
                 voltage={voltage}
                 powerFactor={powerFactor}
+                frequency={frequency}
               />
             </div>
 

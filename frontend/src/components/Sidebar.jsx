@@ -14,7 +14,6 @@ const MOCK_LINKS = [
   { id: 'trip', label: 'Trip', href: '/?mock=trip' },
   { id: 'cycling', label: 'Cycling', href: '/?mock=cycling' },
   { id: 'offline', label: 'Offline', href: '/?mock=offline' },
-  { id: 'live', label: 'Live ESP (Exit Mock)', href: '/' },
 ];
 
 const LINK_LEDS = {
@@ -106,7 +105,7 @@ export default function Sidebar({ connection = 'connecting', alertCount = 0, fwV
               <p className={`font-mono text-[12px] font-medium ${link.tone}`}>
                 {link.label}
               </p>
-              <LinkTrace alive={alive} colour={alive ? '#22c55e' : '#f87171'} width={50} />
+              <LinkTrace alive={alive} colour={alive ? '#22c55e' : '#ef4444'} width={50} />
             </div>
             {deviceId && (
               <p className="mt-2.5 font-mono text-[10px] text-on-surface-subtle">
@@ -132,7 +131,7 @@ export default function Sidebar({ connection = 'connecting', alertCount = 0, fwV
               {alertCount} alert
             </span>
           ) : null}
-          <LinkTrace alive={alive} colour={alive ? '#22c55e' : '#f87171'} width={44} />
+          <LinkTrace alive={alive} colour={alive ? '#22c55e' : '#ef4444'} width={44} />
           <StatusOrb status={link.status} size={7} />
         </div>
       </div>

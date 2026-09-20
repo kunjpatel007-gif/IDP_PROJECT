@@ -35,17 +35,24 @@ const LINE_GAP = 95;
 
 export default function BootSequence() {
   const reduced = useReducedMotion();
-  const [visible, setVisible] = useState(!reduced);
+  const [visible, setVisible] = useState(() => {
+    if (reduced) return false;
+    if (typeof window === 'undefined') return true;
+    if (sessionStorage.getItem('booted')) return false;
+    return true;
+  });
   const [typed, setTyped] = useState([]);
   const [flash, setFlash] = useState(false);
   const [bars, setBars] = useState([]);
   const timers = useRef([]);
 
   useEffect(() => {
-    if (reduced) {
+    if (reduced || !visible) {
       setVisible(false);
       return undefined;
     }
+
+    sessionStorage.setItem('booted', 'true');
 
     let clock = 220;
     LINES.forEach((line, li) => {

@@ -89,7 +89,7 @@ function RelayRocker({ on, offline }) {
 
 function MetricWell({ label, value, unit, history, colour, tone, dimmed, scaleMax, tooltip, unitLabel }) {
   return (
-    <HoverPanel tilt={0} lift={false} glowSize={200} className="flex flex-col overflow-hidden border border-border-subtle bg-surface-well shadow-well">
+    <HoverPanel tilt={0} lift={false} glowSize={200} className="flex flex-col overflow-hidden border border-border-subtle bg-surface-subtle shadow-well">
       <div className="flex items-baseline justify-between px-3 pt-2.5">
         <span className="font-mono text-[10px] uppercase tracking-[0.05em] text-on-surface-subtle">
           {label}
@@ -328,7 +328,7 @@ export default function DeviceCard({
               value={current == null ? DASH : fmt(current, 2)}
               unit="A"
               history={currentHistory}
-              scaleMax={threshold / 230}
+              scaleMax={voltage > 0 && threshold > 0 ? threshold / voltage : null}
               tooltip
               unitLabel="A"
               colour={tripped ? '#ef4444' : '#d97736'}
@@ -439,8 +439,8 @@ export default function DeviceCard({
         <HoverPanel className="min-w-0"><TripCurve
           current={current ?? 0}
           threshold={threshold}
-          voltage={voltage ?? 230}
-          powerFactor={powerFactor ?? 0.95}
+          voltage={voltage}
+          powerFactor={powerFactor}
           energised={!unreachable}
         /></HoverPanel>
       </motion.div>
