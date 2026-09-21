@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { fmt } from '@/lib/format';
+import { NOMINAL_VOLTAGE } from '@/lib/nominal';
 
 /**
  * Rotating phasor diagram and power triangle.
@@ -27,6 +28,7 @@ export default function PhasorDiagram({
   voltage = 0,
   current = 0,
   powerFactor = 1,
+  threshold = 0,
   energised = true,
   tripped = false,
 }) {
@@ -63,9 +65,12 @@ export default function PhasorDiagram({
   const P = S * Math.cos(phi);
   const Q = S * Math.sin(phi);
 
+  // Calculate full-scale current based on the trip threshold rather than a hardcoded 12A
+  const iFullScale = threshold > 0 ? threshold / (V || NOMINAL_VOLTAGE) : 10;
+
   // Phasor lengths: voltage pinned near full scale, current scaled beside it.
   const vLen = V > 0 ? R * 0.9 : 0;
-  const iLen = I > 0 ? R * Math.min(0.82, 0.28 + (I / 12) * 0.54) : 0;
+  const iLen = I > 0 ? R * Math.min(0.82, 0.28 + (I / iFullScale) * 0.54) : 0;
 
   const accent = tripped ? '#ef4444' : '#d97736';
   const tip = (len, angle) => [CX + len * Math.cos(angle), CY - len * Math.sin(angle)];
@@ -95,8 +100,9 @@ export default function PhasorDiagram({
         ) : null}
       </div>
 
-      <div className="flex flex-col items-center gap-1 p-2.5 sm:gap-2 sm:p-3">
-        <svg viewBox="0 0 148 148" className="w-full max-w-[150px] sm:max-w-[168px]" role="img" aria-label={`Phasor diagram, phase angle ${phiDeg.toFixed(1)} degrees`}>
+      <div className="flex flex-col md:flex-row items-center justify-around gap-6 p-4 sm:p-6 w-full">
+        {/* Left — phasor circle */}
+        <svg viewBox="0 0 148 148" className="w-full max-w-[200px] md:max-w-[260px] shrink-0" role="img" aria-label={`Phasor diagram, phase angle ${phiDeg.toFixed(1)} degrees`}>
           {/* Unit circle and axes */}
           <circle cx={CX} cy={CY} r={R} fill="none" stroke="#2e313a" strokeWidth="1" />
           <circle cx={CX} cy={CY} r={R * 0.55} fill="none" stroke="#2e313a" strokeWidth="1" strokeDasharray="1 4" />
@@ -177,35 +183,38 @@ export default function PhasorDiagram({
           ) : null}
         </svg>
 
-        {/* Power triangle */}
-        <svg viewBox="0 0 148 62" className="w-full max-w-[150px] sm:max-w-[168px]" role="img" aria-label="Power triangle">
-          {S > 0 ? (
-            <>
-              <line x1="8" y1="52" x2={8 + pLen} y2="52" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" />
-              <line x1={8 + pLen} y1="52" x2={8 + pLen} y2={52 - qLen} stroke="#9da2af" strokeWidth="2" strokeLinecap="round" />
-              <line x1="8" y1="52" x2={8 + pLen} y2={52 - qLen} stroke={accent} strokeWidth="2" strokeLinecap="round" />
-            </>
-          ) : (
-            <line x1="8" y1="52" x2="140" y2="52" stroke="#383c47" strokeWidth="1" strokeDasharray="2 4" />
-          )}
-        </svg>
+        {/* Right — triangle + readouts */}
+        <div className="flex flex-col items-center gap-4 w-full max-w-[260px] shrink-0">
+          {/* Power triangle */}
+          <svg viewBox="0 0 148 62" className="w-full" role="img" aria-label="Power triangle">
+            {S > 0 ? (
+              <>
+                <line x1="8" y1="52" x2={8 + pLen} y2="52" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" />
+                <line x1={8 + pLen} y1="52" x2={8 + pLen} y2={52 - qLen} stroke="#9da2af" strokeWidth="2" strokeLinecap="round" />
+                <line x1="8" y1="52" x2={8 + pLen} y2={52 - qLen} stroke={accent} strokeWidth="2" strokeLinecap="round" />
+              </>
+            ) : (
+              <line x1="8" y1="52" x2="140" y2="52" stroke="#383c47" strokeWidth="1" strokeDasharray="2 4" />
+            )}
+          </svg>
 
-        <dl className="grid w-full grid-cols-3 gap-1 font-mono text-[10px]">
-          <div className="flex flex-col">
-            <dt className="tracking-[0.04em] text-on-surface-subtle">P · W</dt>
-            <dd className="text-[12px] font-medium text-accent-green">{fmt(P, 0)}</dd>
-          </div>
-          <div className="flex flex-col">
-            <dt className="tracking-[0.04em] text-on-surface-subtle">Q · VAR</dt>
-            <dd className="text-[12px] font-medium text-on-surface-muted">{fmt(Q, 0)}</dd>
-          </div>
-          <div className="flex flex-col">
-            <dt className="tracking-[0.04em] text-on-surface-subtle">S · VA</dt>
-            <dd className="text-[12px] font-medium" style={{ color: accent }}>
-              {fmt(S, 0)}
-            </dd>
-          </div>
-        </dl>
+          <dl className="grid w-full grid-cols-3 gap-1 font-mono text-[10px]">
+            <div className="flex flex-col">
+              <dt className="tracking-[0.04em] text-on-surface-subtle">P · W</dt>
+              <dd className="text-[12px] font-medium text-accent-green">{fmt(P, 0)}</dd>
+            </div>
+            <div className="flex flex-col">
+              <dt className="tracking-[0.04em] text-on-surface-subtle">Q · VAR</dt>
+              <dd className="text-[12px] font-medium text-on-surface-muted">{fmt(Q, 0)}</dd>
+            </div>
+            <div className="flex flex-col">
+              <dt className="tracking-[0.04em] text-on-surface-subtle">S · VA</dt>
+              <dd className="text-[12px] font-medium" style={{ color: accent }}>
+                {fmt(S, 0)}
+              </dd>
+            </div>
+          </dl>
+        </div>
       </div>
     </div>
   );

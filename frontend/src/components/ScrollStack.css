@@ -1,0 +1,57 @@
+/* ═══════════════════════════════════════════════════════════════
+   SCROLL STACK
+   ───────────────────────────────────────────────────────────────
+   The stock React Bits stylesheet paints the card itself: a fixed
+   20rem height, 40px radius, 3rem of padding and a soft drop
+   shadow. None of that survives contact with this build — the
+   panels are variable height, square-cornered, hairline-bordered
+   and carry their own chrome.
+
+   So the card here is a transparent carrier. It owns the transform
+   and nothing else; whatever is dropped inside keeps its own face.
+   ═══════════════════════════════════════════════════════════════ */
+
+.scroll-stack {
+  position: relative;
+  width: 100%;
+}
+
+.scroll-stack-inner {
+  position: relative;
+  width: 100%;
+}
+
+.scroll-stack-card {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  transform-origin: top center;
+  backface-visibility: hidden;
+  will-change: transform;
+  /* Each card gets its z-index set by the JS; this is the fallback. */
+  z-index: 1;
+  /* Ensure stacking context so z-index actually works */
+  isolation: isolate;
+}
+
+/* No shadow here on purpose. A box-shadow on the carrier paints a
+   rectangle around its whole border box, which for a card holding a
+   four-up grid draws a halo across the gaps between the panels. Depth
+   comes from the scale difference and the panels' own hairlines. */
+
+.scroll-stack-end {
+  width: 100%;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Reduced motion, and the no-JS frame before the first measure: cards
+   sit in an ordinary stacked column with the same rhythm. */
+.scroll-stack-static > .scroll-stack-card {
+  transform: none !important;
+  filter: none !important;
+  will-change: auto;
+}
+.scroll-stack-static > .scroll-stack-card + .scroll-stack-card {
+  margin-top: 16px;
+}

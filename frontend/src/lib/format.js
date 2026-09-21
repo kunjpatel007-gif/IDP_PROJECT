@@ -55,6 +55,16 @@ export function rssiQuality(rssi) {
   return { label: 'Weak', bars: 1 };
 }
 
+/** Elapsed session time as hh:mm:ss — monotonic, never rounded to words. */
+export function fmtDuration(ms) {
+  if (ms == null || !Number.isFinite(ms)) return DASH;
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
 export function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }

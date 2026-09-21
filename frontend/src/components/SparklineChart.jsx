@@ -114,7 +114,10 @@ export default function SparklineChart({
   const onMove = (event) => {
     if (!tooltip) return;
     const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - rect.left;
+    // Painted rect vs layout width — see usePointerGlow. Without this the
+    // scrub line lands off the cursor inside a scaled ScrollStack card.
+    const scale = rect.width / (event.currentTarget.offsetWidth || rect.width || 1);
+    const x = (event.clientX - rect.left) / (scale || 1);
     let nearest = 0;
     let best = Infinity;
     points.forEach(([px], i) => {

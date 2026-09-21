@@ -844,3 +844,301 @@
 
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ═══════════════════════════════════════════════════════════════
+   QUALITY PASS — material, depth, type ladder
+   ───────────────────────────────────────────────────────────────
+   Everything below is additive and deliberately late in the file so
+   it wins ties against the rules above it. Three ideas only:
+
+   1. Surfaces get a bevel. A panel is a machined face catching light
+      from above, not a rectangle with a border.
+   2. Numerals get a ladder. Readout sizes were drifting across eight
+      ad-hoc values doing four jobs; there are now four, and they are
+      fluid rather than pinned to a desktop width.
+   3. The page gets depth. Backplane, chassis, vignette — three planes
+      instead of one.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --hair-lit: rgba(255, 255, 255, 0.05);
+  --hair-dark: rgba(0, 0, 0, 0.38);
+  --amber: #d97736;
+  --amber-soft: #ffb68c;
+  --void: #0d0e11;
+}
+
+/* ── Scrollbar: thin, inset, warms on grab ───────────────────── */
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+::-webkit-scrollbar-track {
+  background: var(--void);
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2d36;
+  border: 3px solid var(--void);
+  border-radius: 99px;
+  transition: background 160ms ease;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4a4f5c;
+}
+::-webkit-scrollbar-thumb:active {
+  background: var(--amber);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a2d36 var(--void);
+}
+
+/* Focus ring reads as a lit bezel rather than a browser artefact. */
+:focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(217, 119, 54, 0.12);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TYPE LADDER — four sizes, fluid, tabular
+   ═══════════════════════════════════════════════════════════════ */
+.readout {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'zero' 1;
+  line-height: 1;
+  /* Deliberately sets no `display`: this class is composed onto `.odometer`
+     in PowerMeter, and being later in the file it would win the tie and
+     collapse the digit drums from inline-flex to inline-block. */
+}
+
+.readout-hero {
+  font-size: clamp(34px, 5.2vw, 48px);
+  font-weight: 300;
+  letter-spacing: -0.03em;
+}
+.readout-xl {
+  font-size: clamp(26px, 3.1vw, 32px);
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+.readout-lg {
+  font-size: clamp(22px, 2.4vw, 27px);
+  font-weight: 500;
+  letter-spacing: -0.022em;
+}
+.readout-md {
+  font-size: clamp(17px, 1.7vw, 19px);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+
+/* Units never compete with the figure they qualify. */
+.readout-unit {
+  margin-left: 0.34em;
+  font-size: 0.44em;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  vertical-align: baseline;
+}
+
+/* A live numeral is lit from behind; a dead one is printed. */
+.readout-lit {
+  text-shadow: 0 0 22px rgba(217, 119, 54, 0.16);
+}
+.readout-lit-critical {
+  text-shadow: 0 0 22px rgba(239, 68, 68, 0.3);
+}
+
+.panel-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.panel-caption {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PANEL MATERIAL — the bevel is the whole trick
+   ═══════════════════════════════════════════════════════════════ */
+.panel {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Light catches the top edge, shadow pools at the bottom. One pseudo-
+   element, no extra DOM, and it is what separates a machined face from
+   a div with a 1px border. */
+.panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow:
+    inset 0 1px 0 var(--hair-lit),
+    inset 0 -1px 0 var(--hair-dark);
+}
+
+/* Accent rail — replaces eight copies of inline `borderLeft`. */
+.panel-accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  pointer-events: none;
+}
+
+/* Hero panels carry registration brackets at the corners: the marks a
+   real instrument face is machined with, not decoration. */
+.panel-hero::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  pointer-events: none;
+  opacity: 0.3;
+  background:
+    linear-gradient(var(--amber), var(--amber)) left 0 top 0 / 8px 1px no-repeat,
+    linear-gradient(var(--amber), var(--amber)) left 0 top 0 / 1px 8px no-repeat,
+    linear-gradient(var(--amber), var(--amber)) right 0 top 0 / 8px 1px no-repeat,
+    linear-gradient(var(--amber), var(--amber)) right 0 top 0 / 1px 8px no-repeat,
+    linear-gradient(var(--amber), var(--amber)) left 0 bottom 0 / 8px 1px no-repeat,
+    linear-gradient(var(--amber), var(--amber)) left 0 bottom 0 / 1px 8px no-repeat,
+    linear-gradient(var(--amber), var(--amber)) right 0 bottom 0 / 8px 1px no-repeat,
+    linear-gradient(var(--amber), var(--amber)) right 0 bottom 0 / 1px 8px no-repeat;
+}
+
+.panel-hero-critical::after {
+  background-image:
+    linear-gradient(#ef4444, #ef4444), linear-gradient(#ef4444, #ef4444),
+    linear-gradient(#ef4444, #ef4444), linear-gradient(#ef4444, #ef4444),
+    linear-gradient(#ef4444, #ef4444), linear-gradient(#ef4444, #ef4444),
+    linear-gradient(#ef4444, #ef4444), linear-gradient(#ef4444, #ef4444);
+  opacity: 0.45;
+}
+
+/* Panel header: a shallow gradient so the strip reads as recessed. */
+.panel-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 28px;
+  padding: 0 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 72%),
+    rgba(19, 21, 26, 0.55);
+}
+
+/* ── Page rule: amber at the origin, fading out to the right ──── */
+.rule-fade {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(217, 119, 54, 0.55) 0%,
+    rgba(217, 119, 54, 0.22) 6%,
+    rgba(56, 60, 71, 0.55) 26%,
+    rgba(56, 60, 71, 0) 92%
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE DEPTH — backplane / chassis / glass
+   ═══════════════════════════════════════════════════════════════ */
+.page-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(135% 100% at 50% 0%, transparent 38%, rgba(5, 6, 8, 0.6) 100%),
+    linear-gradient(180deg, rgba(5, 6, 8, 0.5) 0%, transparent 16%);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TAB CHANGE — one orchestrated moment, not a pile of effects
+   ═══════════════════════════════════════════════════════════════ */
+@keyframes tab-sweep {
+  0% {
+    transform: translateY(-14px);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(var(--sweep-dist, 62vh));
+    opacity: 0;
+  }
+}
+
+.tab-sweep {
+  animation: tab-sweep 700ms cubic-bezier(0.32, 0, 0.16, 1) forwards;
+}
+
+/* ── Nav rail: the lit channel behind the active item ─────────── */
+.nav-item-glow {
+  background: linear-gradient(
+    90deg,
+    rgba(217, 119, 54, 0.16) 0%,
+    rgba(217, 119, 54, 0.05) 45%,
+    transparent 100%
+  );
+}
+
+/* ── Signal bars ──────────────────────────────────────────────── */
+.sig-bar {
+  transition:
+    background-color 260ms ease,
+    opacity 260ms ease;
+}
+
+/* Reduced motion: the quality pass adds no looping animation that
+   needs suppressing, but the sweep is a transient and should not fire. */
+@media (prefers-reduced-motion: reduce) {
+  .tab-sweep {
+    display: none !important;
+  }
+  .panel::before {
+    box-shadow:
+      inset 0 1px 0 var(--hair-lit),
+      inset 0 -1px 0 var(--hair-dark);
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   LENIS — the rules the library needs on the document
+   ───────────────────────────────────────────────────────────────
+   Inlined rather than pulled in via `import 'lenis/dist/lenis.css'`
+   so there is one stylesheet to reason about. The second rule is
+   the one that matters: a CSS `scroll-behavior: smooth` anywhere
+   on the document fights Lenis for every programmatic scroll and
+   the result is a visible tug-of-war.
+   ═══════════════════════════════════════════════════════════════ */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* An iframe swallows wheel events and stalls the whole surface. */
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}

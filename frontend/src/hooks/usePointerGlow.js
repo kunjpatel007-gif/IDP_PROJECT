@@ -19,8 +19,17 @@ export function usePointerGlow() {
     const node = ref.current;
     if (!node) return;
     const rect = node.getBoundingClientRect();
-    node.style.setProperty('--px', `${event.clientX - rect.left}px`);
-    node.style.setProperty('--py', `${event.clientY - rect.top}px`);
+
+    /* `getBoundingClientRect` reports the painted rect, so under a scaled
+       ancestor — a pinned ScrollStack card, say — the offset it yields is in
+       screen pixels while `--px` is read in the element's own untransformed
+       coordinate space. Dividing by the ratio of painted width to layout
+       width puts the lamp back under the cursor at any scale. */
+    const scaleX = rect.width / (node.offsetWidth || rect.width || 1);
+    const scaleY = rect.height / (node.offsetHeight || rect.height || 1);
+
+    node.style.setProperty('--px', `${(event.clientX - rect.left) / (scaleX || 1)}px`);
+    node.style.setProperty('--py', `${(event.clientY - rect.top) / (scaleY || 1)}px`);
   }, []);
 
   const onPointerEnter = useCallback(

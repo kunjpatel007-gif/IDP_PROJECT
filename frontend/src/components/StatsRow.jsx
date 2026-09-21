@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import HoverPanel from '@/components/HoverPanel';
+import Panel from '@/components/Panel';
 import StatusOrb from '@/components/StatusOrb';
 import SparklineChart from '@/components/SparklineChart';
 import { useAnimatedNumber } from '@/hooks/useAnimatedNumber';
@@ -17,35 +17,18 @@ import { scaleWatts } from '@/lib/format';
 
 function Well({ label, address, children, footer, alert = false, className = '' }) {
   return (
-    <HoverPanel
-      tilt={5}
-      glowColor={alert ? '239, 68, 68' : '217, 119, 54'}
-      glowSize={220}
-      className={`flex flex-col justify-between overflow-hidden rounded border bg-surface-card ${
-        alert ? 'border-accent-red/35' : 'border-border-subtle'
-      } ${className}`}
+    <Panel
+      label={label}
+      meta={address}
+      critical={alert}
+      vignette={alert}
+      shimmer
+      footer={footer}
+      className={className}
+      bodyClassName="px-3.5 pb-3 pt-4"
     >
-      {alert ? (
-        <div
-          className="alert-vignette pointer-events-none absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(ellipse 90% 120% at 50% 100%, rgba(220,38,38,0.16) 0%, transparent 70%)',
-          }}
-          aria-hidden="true"
-        />
-      ) : null}
-
-      <div className="holo-shimmer relative flex h-7 items-center justify-between border-b border-border-subtle px-3.5">
-        <span className="truncate whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.05em] text-on-surface-muted sm:text-[11px]">
-          {label}
-        </span>
-        <span className="flex shrink-0 items-center">{address}</span>
-      </div>
-
-      <div className="relative flex flex-1 flex-col justify-end px-3.5 pb-3 pt-4">{children}</div>
-      {footer}
-    </HoverPanel>
+      {children}
+    </Panel>
   );
 }
 
@@ -118,7 +101,7 @@ export default function StatsRow({ device, powerHistory }) {
         className="min-h-[104px]"
       >
         <div className="flex items-baseline gap-1.5">
-          <span className={`font-mono text-[26px] font-medium tracking-tight sm:text-[30px] ${unreachable ? 'text-on-surface-subtle' : 'text-on-surface'}`}>
+          <span className={`readout readout-xl font-mono ${unreachable ? 'text-on-surface-subtle' : 'text-on-surface'}`}>
             {device.frequency != null ? device.frequency.toFixed(1) : '—'}
           </span>
           <span className="font-mono text-[12px] text-on-surface-muted">Hz</span>
@@ -131,7 +114,7 @@ export default function StatsRow({ device, powerHistory }) {
         className="min-h-[104px]"
       >
         <div className="flex items-baseline gap-1.5">
-          <span className={`font-mono text-[26px] font-medium tracking-tight sm:text-[30px] ${
+          <span className={`readout readout-xl font-mono ${
             unreachable ? 'text-on-surface-subtle' : device.powerFactor != null && device.powerFactor < 0.85 ? 'text-accent-amber' : 'text-on-surface'
           }`}>
             {device.powerFactor != null ? device.powerFactor.toFixed(2) : '—'}
@@ -160,7 +143,7 @@ export default function StatsRow({ device, powerHistory }) {
         }
       >
         <div className="flex items-baseline gap-1.5">
-          <span className={`font-mono text-[26px] font-medium tracking-tight sm:text-[30px] ${powerTone}`}>
+          <span className={`readout readout-xl font-mono ${powerTone} ${unreachable ? '' : 'readout-lit'}`}>
             {scaled.value.toLocaleString('en-US', {
               minimumFractionDigits: scaled.decimals,
               maximumFractionDigits: scaled.decimals,
@@ -179,8 +162,8 @@ export default function StatsRow({ device, powerHistory }) {
         <div className="flex items-baseline justify-between gap-2">
           <Counter
             value={tripped ? 1 : 0}
-            className={`font-mono text-[26px] font-medium tracking-tight sm:text-[30px] ${
-              tripped ? 'text-accent-red' : 'text-on-surface'
+            className={`readout readout-xl font-mono ${
+              tripped ? 'text-accent-red readout-lit-critical' : 'text-on-surface'
             }`}
           />
           {tripped ? (

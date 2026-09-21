@@ -6,6 +6,7 @@ import PowerFactorGauge from '@/components/PowerFactorGauge';
 import { IconClose } from '@/components/Icons';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { DASH, fmt, fmtClock, fmtHeap, fmtSilence, rssiQuality } from '@/lib/format';
+import { NOMINAL_FREQUENCY } from '@/lib/nominal';
 
 /**
  * Extended telemetry.
@@ -71,7 +72,7 @@ function SignalBars({ bars }) {
   );
 }
 
-export default function DetailsPanel({ open, onClose, device, voltageHistory = [], currentHistory = [] }) {
+export default function DetailsPanel({ device, voltageHistory = [], currentHistory = [] }) {
   const reduced = useReducedMotion();
 
   // Radio and heap get their own short windows — they are not on the card face.
@@ -94,7 +95,7 @@ export default function DetailsPanel({ open, onClose, device, voltageHistory = [
   } = device;
 
   const signal = rssiQuality(rssi);
-  const freqDelta = frequency != null ? Number(frequency) - 50 : null;
+  const freqDelta = frequency != null ? Number(frequency) - NOMINAL_FREQUENCY : null;
   const freqTone =
     freqDelta == null
       ? 'text-on-surface-subtle'
@@ -105,39 +106,22 @@ export default function DetailsPanel({ open, onClose, device, voltageHistory = [
           : 'text-on-surface';
 
   return (
-    <AnimatePresence initial={false}>
-      {open ? (
-        <motion.article
-          key="details"
-          initial={reduced ? { opacity: 1 } : { opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={reduced ? { opacity: 0 } : { opacity: 0, height: 0 }}
-          transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
-          className="overflow-hidden rounded border border-border-subtle bg-surface-card"
-        >
-          <div className="flex h-9 items-center justify-between border-b border-border-subtle px-4">
-            <div className="flex items-baseline gap-2">
-              <h3 className="font-display text-[13px] font-semibold tracking-tight text-on-surface">
-                Extended telemetry
-              </h3>
-              <span className="font-mono text-[10px] tracking-[0.05em] text-on-surface-subtle">
-                {deviceId}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close extended telemetry"
-              className="-m-1.5 p-1.5 text-on-surface-subtle transition-all duration-300 hover:rotate-90 hover:text-on-surface"
-            >
-              <IconClose width={15} height={15} />
-            </button>
-          </div>
+    <article className="overflow-hidden">
+      <div className="flex h-9 items-center justify-between border-b border-border-subtle px-4">
+        <div className="flex items-baseline gap-2">
+          <h3 className="font-display text-[13px] font-semibold tracking-tight text-on-surface">
+            Extended telemetry
+          </h3>
+          <span className="font-mono text-[10px] tracking-[0.05em] text-on-surface-subtle">
+            {deviceId}
+          </span>
+        </div>
+      </div>
 
-          <div className="grid gap-x-6 gap-y-1 p-4 md:grid-cols-[minmax(0,200px)_1fr]">
-            <div className="pb-2 md:pb-0">
-              <PowerFactorGauge value={offline ? null : powerFactor} dimmed={offline} />
-            </div>
+      <div className="grid gap-x-6 gap-y-1 p-4 md:grid-cols-[minmax(0,200px)_1fr]">
+        <div className="pb-2 md:pb-0">
+          <PowerFactorGauge value={offline ? null : powerFactor} dimmed={offline} />
+        </div>
 
             <div className="grid gap-x-6 sm:grid-cols-2">
               <Row
@@ -183,8 +167,6 @@ export default function DetailsPanel({ open, onClose, device, voltageHistory = [
               />
             </div>
           </div>
-        </motion.article>
-      ) : null}
-    </AnimatePresence>
+    </article>
   );
 }

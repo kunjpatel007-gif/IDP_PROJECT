@@ -84,10 +84,10 @@ export default function TripCurve({ current = 0, threshold = 0, voltage, powerFa
         </span>
       </div>
 
-      <div className="p-2">
+      <div className="p-3 sm:p-5 flex justify-center">
         <svg
           viewBox={`0 0 ${W} ${H}`}
-          className="w-full cursor-crosshair"
+          className="w-full max-w-[540px] cursor-crosshair"
           role="img"
           aria-label="Inverse time current characteristic"
           onPointerMove={(event) => {

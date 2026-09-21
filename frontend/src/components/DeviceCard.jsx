@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import ACScope from '@/components/ACScope';
 import ControlButton from '@/components/ControlButton';
 import HoverPanel from '@/components/HoverPanel';
-import DetailsPanel from '@/components/DetailsPanel';
+
 import PhasorDiagram from '@/components/PhasorDiagram';
 import PowerFlowRibbon from '@/components/PowerFlowRibbon';
 import PowerMeter from '@/components/PowerMeter';
@@ -89,11 +89,9 @@ function RelayRocker({ on, offline }) {
 
 function MetricWell({ label, value, unit, history, colour, tone, dimmed, scaleMax, tooltip, unitLabel }) {
   return (
-    <HoverPanel tilt={0} lift={false} glowSize={200} className="flex flex-col overflow-hidden border border-border-subtle bg-surface-subtle shadow-well">
+    <HoverPanel tilt={0} lift={false} glowSize={200} className="panel flex flex-col overflow-hidden border border-border-subtle bg-surface-subtle shadow-well">
       <div className="flex items-baseline justify-between px-3 pt-2.5">
-        <span className="font-mono text-[10px] uppercase tracking-[0.05em] text-on-surface-subtle">
-          {label}
-        </span>
+        <span className="panel-label font-mono text-on-surface-subtle">{label}</span>
         <span className="flex items-baseline gap-1">
           <span className={`font-mono text-[15px] font-medium ${tone}`}>{value}</span>
           <span className="font-mono text-[11px] text-on-surface-subtle">{unit}</span>
@@ -123,7 +121,7 @@ export default function DeviceCard({
 }) {
   const reduced = useReducedMotion();
   const [phase, setPhase] = useState('idle'); // idle | booting | live
-  const [detailsOpen, setDetailsOpen] = useState(false);
+  
 
   const {
     status,
@@ -206,7 +204,9 @@ export default function DeviceCard({
         variants={chassis}
         initial="hidden"
         animate={booted ? 'show' : 'hidden'}
-        className={`relative overflow-hidden rounded border bg-surface-card transition-colors ${
+        className={`panel panel-hero ${
+          tripped ? 'panel-hero-critical' : ''
+        } relative overflow-hidden rounded border bg-surface-card shadow-chassis transition-colors ${
           tripped
             ? 'border-accent-red/35'
             : unreachable
@@ -298,7 +298,7 @@ export default function DeviceCard({
               {tripped ? 'Peak trip load' : 'Current power'}
             </span>
             <PowerMeter
-              valueClassName="font-mono text-[40px] font-light tracking-tight sm:text-5xl"
+              valueClassName="readout readout-hero font-mono"
               value={offline ? 0 : displayPower}
               unit="W"
               tone={powerTone}
@@ -381,22 +381,6 @@ export default function DeviceCard({
             </span>
 
             <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => setDetailsOpen((v) => !v)}
-                aria-expanded={detailsOpen}
-                className="actuator inline-flex h-10 items-center gap-1.5 rounded border border-border-subtle px-3.5 text-[13px] lg:h-8 lg:px-3 lg:text-[12px] font-medium text-on-surface-muted hover:border-border-muted hover:bg-surface-card-hover hover:text-on-surface"
-              >
-                Details
-                <motion.span
-                  animate={{ rotate: detailsOpen ? 90 : 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="inline-flex"
-                >
-                  <IconChevron width={13} height={13} />
-                </motion.span>
-              </button>
-
               {unreachable ? (
                 <span className="font-mono text-[11px] tracking-[0.04em] text-on-surface-subtle">
                   {staleTripped ? 'no link — reset when it returns' : 'controls unavailable'}
@@ -414,44 +398,6 @@ export default function DeviceCard({
         </div>
       </motion.article>
       </div>
-
-      <motion.div
-        variants={strip}
-        initial="hidden"
-        animate={booted ? 'show' : 'hidden'}
-        className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)_minmax(0,1fr)]"
-      >
-        <HoverPanel className="min-w-0"><ACScope
-          voltage={voltage ?? 0}
-          current={current ?? 0}
-          powerFactor={powerFactor ?? 1}
-          frequency={frequency}
-          energised={!unreachable}
-          tripped={tripped}
-        /></HoverPanel>
-        <HoverPanel className="min-w-0"><PhasorDiagram
-          voltage={voltage ?? 0}
-          current={current ?? 0}
-          powerFactor={powerFactor ?? 1}
-          energised={!unreachable}
-          tripped={tripped}
-        /></HoverPanel>
-        <HoverPanel className="min-w-0"><TripCurve
-          current={current ?? 0}
-          threshold={threshold}
-          voltage={voltage}
-          powerFactor={powerFactor}
-          energised={!unreachable}
-        /></HoverPanel>
-      </motion.div>
-
-      <DetailsPanel
-        open={detailsOpen}
-        onClose={() => setDetailsOpen(false)}
-        device={device}
-        voltageHistory={voltageHistory}
-        currentHistory={currentHistory}
-      />
     </div>
   );
 }

@@ -56,7 +56,7 @@ export default function HoverPanel({
       }}
       animate={lift && hovering && !reduced ? { y: -2 } : { y: 0 }}
       transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-      className={`relative ${className}`}
+      className={`cursor-target relative ${className}`}
     >
       {children}
 

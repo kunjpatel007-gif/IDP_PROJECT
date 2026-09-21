@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { SCOPE_CURRENT_FLOOR, SCOPE_VOLTAGE_FULL_SCALE } from '@/lib/nominal';
+import { SCOPE_CURRENT_FLOOR, SCOPE_VOLTAGE_FULL_SCALE, NOMINAL_FREQUENCY } from '@/lib/nominal';
 
 /**
  * Dual-trace mains oscilloscope.
@@ -29,7 +29,7 @@ export default function ACScope({
   voltage = 0,
   current = 0,
   powerFactor = 1,
-  frequency = 50,
+  frequency = NOMINAL_FREQUENCY,
   energised = true,
   tripped = false,
   height = 168,
@@ -213,7 +213,7 @@ export default function ACScope({
         const k = cx * omega + sweep;
         const vInst = (s.voltage ?? 0) * Math.SQRT2 * Math.sin(k);
         const iInst = (s.current ?? 0) * Math.SQRT2 * Math.sin(k - eased.current.phi);
-        const tMs = (cx / width) * (CYCLES / (s.frequency || 50)) * 1000;
+        const tMs = (cx / width) * (CYCLES / (s.frequency || NOMINAL_FREQUENCY)) * 1000;
 
         ctx.save();
         ctx.setLineDash([3, 3]);
