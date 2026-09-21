@@ -25,7 +25,7 @@ const LINK_LEDS = {
 
 function NavButton({ id, label, Icon, badge, active, alertCount, onSelect }) {
   return (
-    <button
+    <motion.button whileTap={{ scale: 0.96 }}
       type="button"
       onClick={() => onSelect(id)}
       aria-current={active ? 'page' : undefined}
@@ -75,7 +75,7 @@ function NavButton({ id, label, Icon, badge, active, alertCount, onSelect }) {
           {alertCount}
         </motion.span>
       ) : null}
-    </button>
+    </motion.button>
   );
 }
 
@@ -136,13 +136,13 @@ export default function Sidebar({
             <p className="panel-label mb-2 px-1 text-on-surface-subtle">Scenario override</p>
             <div className="flex flex-wrap gap-1.5">
               {MOCK_LINKS.map((m) => (
-                <a
+                <motion.a whileTap={{ scale: 0.94 }}
                   key={m.id}
                   href={m.href}
                   className="rounded border border-border-subtle bg-surface-subtle px-2 py-1 font-mono text-[9px] tracking-[0.04em] text-on-surface-muted transition-colors hover:border-border-muted hover:bg-surface-card-hover hover:text-on-surface cursor-target"
                 >
                   {m.label}
-                </a>
+                </motion.a>
               ))}
             </div>
           </div>
@@ -190,7 +190,7 @@ export default function Sidebar({
           {NAV.map(({ id, label }) => {
             const active = id === activeTab;
             return (
-              <button
+              <motion.button whileTap={{ scale: 0.96 }}
                 key={id}
                 type="button"
                 onClick={() => onTabChange(id)}
@@ -202,7 +202,7 @@ export default function Sidebar({
                 }`}
               >
                 {label}
-              </button>
+              </motion.button>
             );
           })}
         </nav>

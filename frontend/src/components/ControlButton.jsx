@@ -163,6 +163,7 @@ export default function ControlButton({
       <motion.button
         type="button"
         style={{ x: sx, y: sy }}
+        whileTap={{ scale: 0.96 }}
         onPointerMove={onMagnet}
         onClick={handleClick}
         disabled={disabled || busy}

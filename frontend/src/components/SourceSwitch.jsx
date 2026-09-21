@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { clearMockFromUrl } from '@/firebase';
 import WarmTooltip, { WarmTooltipGroup } from '@/components/WarmTooltip';
 
@@ -48,7 +49,7 @@ export default function SourceSwitch({ source, onChange, live }) {
               popBlur={4}
               showFuse={false}
             >
-              <button
+              <motion.button whileTap={{ scale: 0.96 }}
                 type="button"
                 onClick={() => select(option.id)}
                 aria-pressed={active}
@@ -66,7 +67,7 @@ export default function SourceSwitch({ source, onChange, live }) {
                     }`}
                   />
                 ) : null}
-              </button>
+              </motion.button>
             </WarmTooltip>
           );
         })}

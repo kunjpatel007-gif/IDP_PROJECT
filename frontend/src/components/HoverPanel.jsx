@@ -48,6 +48,7 @@ export default function HoverPanel({
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
+      whileTap={!reduced ? { scale: 0.985, y: 0 } : undefined}
       style={{
         rotateX,
         rotateY,

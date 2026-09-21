@@ -236,13 +236,13 @@ export default function App() {
                     { id: 'cycling', label: 'Cycling', href: '/?mock=cycling' },
                     { id: 'offline', label: 'Offline', href: '/?mock=offline' },
                   ].map((m) => (
-                    <a
+                    <motion.a whileTap={{ scale: 0.94 }}
                       key={m.id}
                       href={m.href}
                       className="rounded border border-border-subtle bg-surface-subtle px-2 py-1 font-mono text-[10px] tracking-[0.04em] text-on-surface-muted transition-colors hover:border-border-muted hover:bg-surface-card-hover hover:text-on-surface cursor-target"
                     >
                       {m.label}
-                    </a>
+                    </motion.a>
                   ))}
                 </div>
               </div>
