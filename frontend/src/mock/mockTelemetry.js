@@ -15,6 +15,8 @@
  *   ?mock=cycling  a compressor duty-cycling on and off
  */
 
+import { DEVICE_ID } from '@/firebase';
+
 const PUSH_MS = 2000;
 const THRESHOLD = 1500;
 
@@ -82,8 +84,8 @@ export function startMockTelemetry(onData) {
     seq += 1;
 
     onData({
-      device_id: 'socket1',
-      device_name: 'Living Room Socket',
+      device_id: DEVICE_ID || 'mock-device',
+      device_name: 'Mock Socket',
       fw_version: '0.2.0-mock',
       rssi: Math.round(-62 + jitter(7)),
       seq,

@@ -50,10 +50,10 @@ const COMMAND_COPY = {
 };
 
 /** Turn a Firebase error into something that says what to do next. */
-function describeError(error) {
+function describeError(error, deviceId) {
   const code = error?.code ?? '';
   if (code.includes('permission-denied')) {
-    return 'Firestore rejected the write. The commands/socket1 rule needs to allow writes.';
+    return `Firestore rejected the write. The commands/${deviceId || 'device'} rule needs to allow writes.`;
   }
   if (code.includes('unavailable') || code.includes('network')) {
     return 'No route to Firestore. Check this machine’s connection and try again.';
@@ -149,7 +149,7 @@ export default function App() {
         push({ tone: 'ok', title: copy.title, detail: copy.detail });
       } catch (error) {
         console.error('[SmartAdapter] command write failed:', error);
-        push({ tone: 'error', title: 'Command not sent', detail: describeError(error), ttl: 8000 });
+        push({ tone: 'error', title: 'Command not sent', detail: describeError(error, device.deviceId), ttl: 8000 });
         throw error;
       } finally {
         setCommandInFlight(false);

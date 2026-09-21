@@ -13,17 +13,17 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
 
 export const firebaseConfig = {
-  apiKey: 'AIzaSyA3od6Oqd4BXyRxA9Aict_OkdQGcNH5XTs',
-  authDomain: 'smart-adapter-backend.firebaseapp.com',
-  projectId: 'smart-adapter-backend',
-  storageBucket: 'smart-adapter-backend.firebasestorage.app',
-  messagingSenderId: '1068769473313',
-  appId: '1:1068769473313:web:3d63acc3296b100b788460',
-  measurementId: 'G-BVFCTJP53T',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-/** Document id of the one physical adapter on the bench. */
-export const DEVICE_ID = import.meta.env.VITE_DEVICE_ID || 'socket1';
+/** Document id of the target physical adapter. */
+export const DEVICE_ID = import.meta.env.VITE_DEVICE_ID || 'UNCONFIGURED_DEVICE';
 
 /** No telemetry for this long → the device is considered Offline. */
 export const STALE_MS = 15_000;

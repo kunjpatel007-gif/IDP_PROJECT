@@ -37,9 +37,9 @@
 const char* WIFI_SSID     = SECRET_WIFI_SSID;
 const char* WIFI_PASSWORD = SECRET_WIFI_PASSWORD;
 
-const char* DEVICE_ID     = "socket1";           // must be unique per device
-const char* DEVICE_NAME   = "Living Room Socket"; // friendly name shown on dashboard
-const char* MDNS_HOSTNAME = "smartsocket1";       // reachable at http://smartsocket1.local
+String DEVICE_ID;           // generated from MAC
+String DEVICE_NAME;         // generated from MAC
+String MDNS_HOSTNAME;       // generated from MAC
 
 // ---------- CLOUD CONFIG ----------
 #define FW_VERSION "0.2.0-cloud"
@@ -306,8 +306,15 @@ void setup() {
 
   connectWiFi();
 
-  if (MDNS.begin(MDNS_HOSTNAME)) {
-    Serial.printf("mDNS ready: http://%s.local\n", MDNS_HOSTNAME);
+  String mac = WiFi.macAddress();
+  mac.replace(":", "");
+  String shortMac = mac.substring(mac.length() - 6);
+  DEVICE_ID = "socket-" + shortMac;
+  DEVICE_NAME = "Smart Socket " + shortMac;
+  MDNS_HOSTNAME = "smartsocket-" + shortMac;
+
+  if (MDNS.begin(MDNS_HOSTNAME.c_str())) {
+    Serial.printf("mDNS ready: http://%s.local\n", MDNS_HOSTNAME.c_str());
   }
 
   setupRoutes();
@@ -475,7 +482,7 @@ void handleGetInfo() {
   doc["device_id"]   = DEVICE_ID;
   doc["device_name"] = DEVICE_NAME;
   doc["ip"]           = WiFi.localIP().toString();
-  doc["mdns"]         = String(MDNS_HOSTNAME) + ".local";
+  doc["mdns"]         = MDNS_HOSTNAME + ".local";
   String response;
   serializeJson(doc, response);
   server.send(200, "application/json", response);
