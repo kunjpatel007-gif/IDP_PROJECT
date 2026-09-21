@@ -215,12 +215,38 @@ export default function App() {
 
       <div className={`relative z-10 lg:pl-60 ${shake ? 'chassis-shake' : ''}`}>
         <main className="px-4 pb-20 pt-6 sm:px-6 lg:px-10 lg:pt-9">
-          <div className="mb-6">
-            <SourceSwitch
-              source={source}
-              onChange={setSource}
-              live={device.connection === 'live'}
-            />
+          <div className="mb-6 flex flex-col gap-4">
+            <div>
+              <SourceSwitch
+                source={source}
+                onChange={setSource}
+                live={device.connection === 'live'}
+              />
+            </div>
+
+            {/* Mobile-only mock scenario links (Desktop has them in the sidebar) */}
+            {source === 'mock' ? (
+              <div className="flex flex-wrap items-center gap-2 lg:hidden">
+                <span className="font-mono text-[10px] uppercase tracking-[0.05em] text-on-surface-subtle">
+                  Scenario:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { id: 'trip', label: 'Trip', href: '/?mock=trip' },
+                    { id: 'cycling', label: 'Cycling', href: '/?mock=cycling' },
+                    { id: 'offline', label: 'Offline', href: '/?mock=offline' },
+                  ].map((m) => (
+                    <a
+                      key={m.id}
+                      href={m.href}
+                      className="rounded border border-border-subtle bg-surface-subtle px-2 py-1 font-mono text-[10px] tracking-[0.04em] text-on-surface-muted transition-colors hover:border-border-muted hover:bg-surface-card-hover hover:text-on-surface cursor-target"
+                    >
+                      {m.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <AnimatePresence mode="wait" initial={false}>
