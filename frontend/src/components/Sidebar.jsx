@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 import LinkTrace from '@/components/LinkTrace';
 import StatusOrb from '@/components/StatusOrb';
@@ -79,7 +80,7 @@ function NavButton({ id, label, Icon, badge, active, alertCount, onSelect }) {
   );
 }
 
-export default function Sidebar({
+export default memo(function Sidebar({
   connection = 'connecting',
   alertCount = 0,
   fwVersion,
@@ -209,4 +210,5 @@ export default function Sidebar({
       </header>
     </>
   );
-}
+});
+

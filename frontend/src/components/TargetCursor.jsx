@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { gsap } from 'gsap';
 import './TargetCursor.css';
@@ -426,4 +426,4 @@ const TargetCursor = ({
   );
 };
 
-export default TargetCursor;
+export default memo(TargetCursor);

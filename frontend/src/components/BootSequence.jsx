@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, memo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
@@ -32,7 +32,7 @@ const LINES = [
 const CHAR_MS = 11;
 const LINE_GAP = 95;
 
-export default function BootSequence() {
+export default memo(function BootSequence() {
   const reduced = useReducedMotion();
   const [visible, setVisible] = useState(() => {
     if (reduced) return false;
@@ -213,4 +213,4 @@ export default function BootSequence() {
       ) : null}
     </AnimatePresence>
   );
-}
+});

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, memo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import FaultRecord from '@/components/FaultRecord';
 import { usePrevious } from '@/hooks/usePrevious';
@@ -22,7 +22,7 @@ import { fmt } from '@/lib/format';
 
 const HOLD_MS = 4200;
 
-export default function TripOverlay({ tripped, peakWatts, threshold, voltage, powerFactor, frequency }) {
+export default memo(function TripOverlay({ tripped, peakWatts, threshold, voltage, powerFactor, frequency }) {
   const reduced = useReducedMotion();
   const previous = usePrevious(tripped);
   const [open, setOpen] = useState(false);
@@ -113,4 +113,4 @@ export default function TripOverlay({ tripped, peakWatts, threshold, voltage, po
       ) : null}
     </AnimatePresence>
   );
-}
+});
