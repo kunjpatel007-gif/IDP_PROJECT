@@ -21,7 +21,7 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
  */
 
 const STAGES = [
-  { id: 'write', label: 'Write command', node: 'Firestore', budget: 600 },
+  { id: 'write', label: 'Write command', node: 'Realtime DB', budget: 600 },
   { id: 'poll', label: 'Adapter polls', node: 'ESP32', budget: 2000 },
   { id: 'actuate', label: 'Relay actuates', node: 'Contact', budget: 700 },
   { id: 'confirm', label: 'Telemetry confirms', node: 'Dashboard', budget: 5200 },

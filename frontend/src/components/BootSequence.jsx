@@ -24,7 +24,7 @@ const LINES = [
   { text: 'relay latch 16A .......... CLOSED' },
   { text: 'threshold ................ 1500 W' },
   { text: 'wifi 802.11n ............. CONNECTED' },
-  { text: 'firestore channel ........ opening', tone: 'pending' },
+  { text: 'realtime database ........ opening', tone: 'pending' },
   { text: 'telemetry stream ......... subscribed', tone: 'ok' },
   { text: 'console ready', tone: 'ok' },
 ];

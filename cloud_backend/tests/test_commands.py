@@ -15,51 +15,38 @@ _app = flask.Flask(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Helper: call_commands — build a GET /commands request
+# Helper: call_cmd — build a GET /commands request with mocked RTDB
 # ---------------------------------------------------------------------------
 
 def call_cmd(
     device_id: str = "socket1",
     secret: str | None = None,
-    cmd_doc: dict | None = None,   # None → doc does not exist
-    doc_exists: bool = True,
+    cmd_doc: dict | None = None,   # None → node does not exist
 ) -> tuple[int, dict, dict]:
     """
-    Build a GET /commands test request with a mocked Firestore transaction.
-    cmd_doc: the dict stored in commands/{device_id} (None = document missing).
+    Build a GET /commands test request with a mocked RTDB reference.
+    cmd_doc: the dict stored in commands/{device_id} (None = node missing).
     Returns (status_code, response_headers, parsed_json_body).
     """
     import os
     key = secret if secret is not None else os.environ.get("DEVICE_SHARED_SECRET", "")
 
-    # Build a fake Firestore client that returns cmd_doc when queried
-    fake_snap = MagicMock()
-    fake_snap.exists = doc_exists and cmd_doc is not None
-    fake_snap.to_dict.return_value = cmd_doc or {}
-
-    fake_txn = MagicMock()
-    fake_txn.__enter__ = lambda s: s
-    fake_txn.__exit__ = MagicMock(return_value=False)
-
-    fake_client = MagicMock()
-    fake_client.transaction.return_value = fake_txn
-
-    # Make cmd_ref.get(transaction=txn) return the fake snap
+    # Build a fake RTDB reference that returns cmd_doc when .get() is called
     fake_cmd_ref = MagicMock()
-    fake_cmd_ref.get.return_value = fake_snap
-
-    fake_client.collection.return_value.document.return_value = fake_cmd_ref
-
-    fake_store = MagicMock()
-    fake_store.client = fake_client
+    fake_cmd_ref.get.return_value = cmd_doc  # None = missing, dict = exists
 
     with _app.test_request_context(
         f"/ingest/commands?device_id={device_id}",
         method="GET",
         headers={"X-Device-Key": key},
     ):
-        with patch.object(main, "get_store", return_value=fake_store):
-            result = main.ingest(flask.request)
+        with patch.object(main, 'db') as mock_db, \
+             patch.object(main.RTDBStore, '_init'):
+            mock_db.reference.return_value = fake_cmd_ref
+            store = main.RTDBStore()
+            store._initialized = True
+            with patch.object(main, 'get_store', return_value=store):
+                result = main.ingest(flask.request)
 
     body_str, status_code, resp_headers = result
     try:
@@ -97,22 +84,23 @@ def test_cmd_rejects_unknown_device(env):
 # ===========================================================================
 
 def test_cmd_returns_null_when_no_doc(env):
-    """CMD-4: No document in commands/ → { command: null }."""
-    status, _, body = call_cmd(cmd_doc=None, doc_exists=False)
+    """CMD-4: No node in commands/ → { command: null }."""
+    status, _, body = call_cmd(cmd_doc=None)
     assert status == 200
     assert body["command"] is None
 
 
 def test_cmd_returns_null_for_invalid_command_value(env):
-    """CMD-5: Document with invalid command string → null (sanitized)."""
+    """CMD-5: Node with invalid command string → null (sanitized)."""
     status, _, body = call_cmd(cmd_doc={"command": "EXPLODE"})
     assert status == 200
     assert body["command"] is None
 
 
 def test_cmd_returns_null_for_missing_command_field(env):
-    """CMD-6: Document exists but has no 'command' key → null."""
-    status, _, body = call_cmd(cmd_doc={"issued_at": datetime.now(timezone.utc)})
+    """CMD-6: Node exists but has no 'command' key → null."""
+    issued_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+    status, _, body = call_cmd(cmd_doc={"issued_at": issued_ms})
     assert status == 200
     assert body["command"] is None
 
@@ -124,8 +112,8 @@ def test_cmd_returns_null_for_missing_command_field(env):
 @pytest.mark.parametrize("cmd", ["ON", "OFF", "RESET"])
 def test_cmd_returns_valid_commands(env, cmd):
     """CMD-7/8/9: ON / OFF / RESET returned correctly for fresh docs."""
-    now = datetime.now(timezone.utc)
-    status, _, body = call_cmd(cmd_doc={"command": cmd, "issued_at": now})
+    issued_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+    status, _, body = call_cmd(cmd_doc={"command": cmd, "issued_at": issued_ms})
     assert status == 200
     assert body["command"] == cmd
 
@@ -136,16 +124,16 @@ def test_cmd_returns_valid_commands(env, cmd):
 
 def test_cmd_discards_stale_command(env):
     """CMD-10: Command older than COMMAND_TTL_S (30s) → null (TTL expired)."""
-    stale_time = datetime.now(timezone.utc) - timedelta(seconds=60)
-    status, _, body = call_cmd(cmd_doc={"command": "OFF", "issued_at": stale_time})
+    stale_ms = int((datetime.now(timezone.utc) - timedelta(seconds=60)).timestamp() * 1000)
+    status, _, body = call_cmd(cmd_doc={"command": "OFF", "issued_at": stale_ms})
     assert status == 200
     assert body["command"] is None
 
 
 def test_cmd_accepts_fresh_command(env):
     """CMD-11: Command 5s old → returned (within TTL)."""
-    fresh_time = datetime.now(timezone.utc) - timedelta(seconds=5)
-    status, _, body = call_cmd(cmd_doc={"command": "RESET", "issued_at": fresh_time})
+    fresh_ms = int((datetime.now(timezone.utc) - timedelta(seconds=5)).timestamp() * 1000)
+    status, _, body = call_cmd(cmd_doc={"command": "RESET", "issued_at": fresh_ms})
     assert status == 200
     assert body["command"] == "RESET"
 
@@ -156,7 +144,7 @@ def test_cmd_accepts_fresh_command(env):
 
 def test_cmd_response_has_cors_headers(env):
     """CMD-12: GET /commands response must include CORS headers."""
-    status, headers, _ = call_cmd(cmd_doc=None, doc_exists=False)
+    status, headers, _ = call_cmd(cmd_doc=None)
     assert status == 200
     assert headers.get("Access-Control-Allow-Origin") == "*"
 

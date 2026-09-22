@@ -59,7 +59,7 @@ def clock(monkeypatch):
 # ---------------------------------------------------------------------------
 
 class FakeStore:
-    """In-memory replacement for FirestoreStore that uses rate_limit_retry_after."""
+    """In-memory replacement for RTDBStore that uses rate_limit_retry_after."""
 
     def __init__(self):
         self.calls: list[dict] = []

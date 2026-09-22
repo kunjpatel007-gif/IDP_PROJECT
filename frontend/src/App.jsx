@@ -53,13 +53,13 @@ const COMMAND_COPY = {
 function describeError(error, deviceId) {
   const code = error?.code ?? '';
   if (code.includes('permission-denied')) {
-    return `Firestore rejected the write. The commands/${deviceId || 'device'} rule needs to allow writes.`;
+    return `Realtime Database rejected the write. The commands/${deviceId || 'device'} rule needs to allow writes.`;
   }
   if (code.includes('unavailable') || code.includes('network')) {
-    return 'No route to Firestore. Check this machine’s connection and try again.';
+    return 'No route to Realtime Database. Check this machine\'s connection and try again.';
   }
   if (code.includes('unauthenticated')) {
-    return 'Firestore refused the request as unauthenticated. Check the project config in src/firebase.js.';
+    return 'Realtime Database refused the request as unauthenticated. Check the project config in src/firebase.js.';
   }
   return error?.message ?? 'The write did not complete.';
 }
