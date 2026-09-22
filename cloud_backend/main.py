@@ -11,7 +11,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 import functions_framework
-from google.cloud import firestore
+import firebase_admin
+from firebase_admin import db
 
 MAX_BODY_BYTES = 2048
 MIN_SECRET_LEN = 16
@@ -123,45 +124,43 @@ def rate_limit_retry_after(last_seen: Optional[datetime], now: datetime, min_int
     return None
 
 
-# ---------- Firestore layer ----------
+# ---------- RTDB layer ----------
 
-def _txn_body(transaction, doc_ref, record: dict, now: datetime, min_interval: float) -> Optional[float]:
-    """Plain function (unit-testable). Wrapped below with firestore.transactional."""
-    snap = doc_ref.get(transaction=transaction)
-    last_seen = (snap.to_dict() or {}).get("last_seen") if snap.exists else None
-    retry = rate_limit_retry_after(last_seen, now, min_interval)
-    if retry is not None:
-        return retry
-    transaction.set(doc_ref, {**record, "last_seen": firestore.SERVER_TIMESTAMP}, merge=True)
-    return None
-
-
-_txn_write = firestore.transactional(_txn_body)
-
-
-class FirestoreStore:
-    def __init__(self, client: Optional[firestore.Client] = None, collection: str = "devices"):
-        self._client = client
+class RTDBStore:
+    def __init__(self, collection: str = "telemetry"):
         self._collection = collection
+        self._initialized = False
 
-    @property
-    def client(self) -> firestore.Client:
-        if self._client is None:  # lazy: importing main.py must not need GCP credentials
-            self._client = firestore.Client()
-        return self._client
+    def _init(self):
+        if not self._initialized:
+            try:
+                firebase_admin.get_app()
+            except ValueError:
+                firebase_admin.initialize_app()
+            self._initialized = True
 
     def write_if_allowed(self, device_id: str, record: dict, now: datetime, min_interval: float) -> Optional[float]:
-        doc_ref = self.client.collection(self._collection).document(device_id)
-        return _txn_write(self.client.transaction(), doc_ref, record, now, min_interval)
+        self._init()
+        ref = db.reference(f"{self._collection}/{device_id}")
+        
+        # Check rate limit using a simple get first to avoid throwing exceptions from inside a transaction
+        current_data = ref.child("last_seen").get()
+        if current_data is not None:
+            # RTDB timestamps are integer epoch milliseconds
+            last_seen_dt = datetime.fromtimestamp(current_data / 1000.0, tz=timezone.utc)
+            retry = rate_limit_retry_after(last_seen_dt, now, min_interval)
+            if retry is not None:
+                return retry
+        
+        ref.update({**record, "last_seen": db.ServerValue.TIMESTAMP})
+        return None
 
-
-_store: Optional[FirestoreStore] = None
-
+_store = None
 
 def get_store():
     global _store
     if _store is None:
-        _store = FirestoreStore()
+        _store = RTDBStore()
     return _store
 
 
@@ -187,33 +186,36 @@ def handle_get_commands(request, secret: str, allowed: set):
         return _err(403, "device not allowed or missing device_id param")
 
     try:
-        store = get_store()
-        cmd_ref = store.client.collection(COMMAND_COLLECTION).document(device_id)
-
-        @firestore.transactional
-        def _fetch_and_delete(txn):
-            snap = cmd_ref.get(transaction=txn)
-            if not snap.exists:
+        get_store()._init()
+        cmd_ref = db.reference(f"{COMMAND_COLLECTION}/{device_id}")
+        
+        # Fetch and delete atomically (using a transaction)
+        def _fetch_and_delete(current_data):
+            if not current_data:
                 return None
-            data = snap.to_dict() or {}
-            # TTL check — discard stale commands
-            issued_at = data.get("issued_at")
+            
+            # We return None to abort the transaction, but we need a way to pass the command out.
+            # RTDB Python SDK transactions don't easily allow arbitrary returns. 
+            # We will clear the node by returning {}
+            return {}
+
+        snap = cmd_ref.get()
+        if not snap:
+            command = None
+        else:
+            issued_at = snap.get("issued_at")
+            age = 0
             if issued_at is not None:
-                if isinstance(issued_at, datetime):
-                    age = (datetime.now(timezone.utc) - issued_at).total_seconds()
-                else:
-                    age = 0  # server timestamp not yet resolved, accept it
-                if age > COMMAND_TTL_S:
-                    txn.delete(cmd_ref)
-                    return None
-            cmd = data.get("command")
-            if cmd not in VALID_COMMANDS:
-                txn.delete(cmd_ref)
-                return None
-            txn.delete(cmd_ref)
-            return cmd
-
-        command = _fetch_and_delete(store.client.transaction())
+                age = (datetime.now(timezone.utc) - datetime.fromtimestamp(issued_at / 1000.0, tz=timezone.utc)).total_seconds()
+            
+            cmd = snap.get("command")
+            if age > COMMAND_TTL_S or cmd not in VALID_COMMANDS:
+                command = None
+            else:
+                command = cmd
+            
+            # Delete the command regardless of whether it was valid or stale
+            cmd_ref.delete()
 
     except Exception:  # noqa: BLE001
         log.exception("command queue read failed for %s", device_id)
