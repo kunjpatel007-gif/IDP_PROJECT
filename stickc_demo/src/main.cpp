@@ -169,6 +169,9 @@ void loop() {
   if (now - lastDraw >= 100) {
     lastDraw = now;
     
+    // Actually fetch new data from the I2C bus!
+    M5.Imu.update();
+
     // Read IMU via M5Unified API
     auto imu = M5.Imu.getImuData();
     g_accelX = imu.accel.x;
