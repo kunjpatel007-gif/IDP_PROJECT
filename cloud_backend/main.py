@@ -195,7 +195,7 @@ class RTDBStore:
             except ValueError:
                 db_url = os.environ.get("FIREBASE_DATABASE_URL")
                 if db_url:
-                    firebase_admin.initialize_app(options={"databaseURL": db_url})
+                    firebase_admin.initialize_app(None, {"databaseURL": db_url})
                 else:
                     firebase_admin.initialize_app()
             self._initialized = True
