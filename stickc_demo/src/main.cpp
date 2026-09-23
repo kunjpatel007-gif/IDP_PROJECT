@@ -22,7 +22,7 @@
 // ── Config ────────────────────────────────────────────────────────────────
 static const char* DEVICE_NAME = "StickC Demo";
 static const char* FW_VERSION  = "1.0.0-m5uni";
-static const uint32_t PUSH_INTERVAL_MS = 2000;
+static const uint32_t PUSH_INTERVAL_MS = 2200;
 
 // ── State ─────────────────────────────────────────────────────────────────
 static String   g_deviceId;
@@ -73,9 +73,12 @@ void drawScreen() {
   M5.Display.setTextColor(CYAN);
   M5.Display.println("Accel (g):");
   M5.Display.setTextColor(WHITE);
-  M5.Display.printf(" X: %+.3f\n", g_accelX);
-  M5.Display.printf(" Y: %+.3f\n", g_accelY);
-  M5.Display.printf(" Z: %+.3f\n", g_accelZ);
+  M5.Display.printf(" X:%+.2f Y:%+.2f Z:%+.2f\n", g_accelX, g_accelY, g_accelZ);
+
+  M5.Display.setTextColor(YELLOW);
+  M5.Display.println("Gyro (deg/s):");
+  M5.Display.setTextColor(WHITE);
+  M5.Display.printf(" X:%+.1f Y:%+.1f Z:%+.1f\n", g_gyroX, g_gyroY, g_gyroZ);
 }
 
 #include <WiFiClientSecure.h>
