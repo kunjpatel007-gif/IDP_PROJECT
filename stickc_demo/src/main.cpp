@@ -78,11 +78,18 @@ void drawScreen() {
   M5.Display.printf(" Z: %+.3f\n", g_accelZ);
 }
 
+#include <WiFiClientSecure.h>
+
 bool pushToCloud() {
   if (WiFi.status() != WL_CONNECTED) return false;
 
+  WiFiClientSecure client;
+  // For a quick demo we bypass CA cert validation. 
+  // In production we would use client.setCACert(GOOGLE_ROOT_CAS);
+  client.setInsecure();
+
   HTTPClient http;
-  http.begin(CLOUD_INGEST_URL);
+  http.begin(client, CLOUD_INGEST_URL);
   http.addHeader("Content-Type", "application/json");
   http.addHeader("X-Device-Key", DEVICE_SHARED_SECRET);
   http.setTimeout(5000);
