@@ -21,14 +21,38 @@ COMMAND_COLLECTION = "commands"
 VALID_COMMANDS = {"ON", "OFF", "RESET"}
 COMMAND_TTL_S = 30  # discard commands older than 30 s
 
-NULLABLE_SENSOR_FIELDS = ("voltage", "current", "power", "energy", "frequency", "power_factor")
-REQUIRED_NUMBER_FIELDS = ("threshold",)
-REQUIRED_BOOL_FIELDS = ("tripped", "relay_on")
-REQUIRED_FIELDS = ("device_id",) + NULLABLE_SENSOR_FIELDS + REQUIRED_NUMBER_FIELDS + REQUIRED_BOOL_FIELDS
-OPTIONAL_STR_FIELDS = {"device_name": 64, "fw_version": 32}
-OPTIONAL_INT_FIELDS = ("rssi", "uptime_s", "seq", "free_heap")
+# Toggle: set env var DEVICE_MODE=stickc on Cloud Function to accept StickC payloads.
+# Defaults to "esp32" so the production adapter is never affected.
+DEVICE_MODE = os.environ.get("DEVICE_MODE", "esp32")
+
+# ── Schema: ESP32 power adapter (production) ──────────────────────────────
+ESP32_NULLABLE_SENSOR_FIELDS = ("voltage", "current", "power", "energy", "frequency", "power_factor")
+ESP32_REQUIRED_NUMBER_FIELDS = ("threshold",)
+ESP32_REQUIRED_BOOL_FIELDS   = ("tripped", "relay_on")
+ESP32_REQUIRED_FIELDS        = ("device_id",) + ESP32_NULLABLE_SENSOR_FIELDS + ESP32_REQUIRED_NUMBER_FIELDS + ESP32_REQUIRED_BOOL_FIELDS
+ESP32_OPTIONAL_STR_FIELDS    = {"device_name": 64, "fw_version": 32}
+ESP32_OPTIONAL_INT_FIELDS    = ("rssi", "uptime_s", "seq", "free_heap")
+
+# Keep old names as aliases so test fixtures don't need changing
+NULLABLE_SENSOR_FIELDS = ESP32_NULLABLE_SENSOR_FIELDS
+REQUIRED_NUMBER_FIELDS = ESP32_REQUIRED_NUMBER_FIELDS
+REQUIRED_BOOL_FIELDS   = ESP32_REQUIRED_BOOL_FIELDS
+REQUIRED_FIELDS        = ESP32_REQUIRED_FIELDS
+OPTIONAL_STR_FIELDS    = ESP32_OPTIONAL_STR_FIELDS
+OPTIONAL_INT_FIELDS    = ESP32_OPTIONAL_INT_FIELDS
+
+# ── Schema: M5StickC Plus 2 demo device ──────────────────────────────────
+STICKC_REQUIRED_FIELDS     = ("device_id",)
+STICKC_OPTIONAL_STR_FIELDS = {"device_name": 64, "fw_version": 32}
+STICKC_OPTIONAL_INT_FIELDS = ("rssi", "uptime_s", "seq", "free_heap", "battery_pct")
+STICKC_OPTIONAL_FLOAT_FIELDS = (
+    "accel_x", "accel_y", "accel_z",
+    "gyro_x",  "gyro_y",  "gyro_z",
+    "battery_v",
+)
 
 log = logging.getLogger("ingest")
+
 
 
 class ConfigError(RuntimeError):
@@ -122,6 +146,39 @@ def rate_limit_retry_after(last_seen: Optional[datetime], now: datetime, min_int
         # Clamp: small negative elapsed (clock skew) must not produce a wait longer than the window.
         return min(max(min_interval - elapsed, 0.0), min_interval)
     return None
+
+
+# ── StickC payload validator ──────────────────────────────────────────────
+
+def validate_stickc_payload(payload: Any) -> tuple[Optional[dict], Optional[dict]]:
+    """Validate an M5StickC Plus 2 telemetry payload (IMU + battery fields)."""
+    if not isinstance(payload, dict):
+        return None, {"error": "body must be a JSON object"}
+    missing = [f for f in STICKC_REQUIRED_FIELDS if f not in payload]
+    if missing:
+        return None, {"error": "missing fields", "missing": missing}
+
+    invalid: dict[str, str] = {}
+    device_id = payload["device_id"]
+    if not isinstance(device_id, str) or not DEVICE_ID_RE.fullmatch(device_id) or (device_id.startswith("__") and device_id.endswith("__")):
+        invalid["device_id"] = "must match ^[A-Za-z0-9_-]{1,64}$ and not be reserved __.*__"
+    for f, max_len in STICKC_OPTIONAL_STR_FIELDS.items():
+        if f in payload and not (isinstance(payload[f], str) and len(payload[f]) <= max_len):
+            invalid[f] = f"must be a string of at most {max_len} chars"
+    for f in STICKC_OPTIONAL_INT_FIELDS:
+        if f in payload and (not isinstance(payload[f], int) or isinstance(payload[f], bool)):
+            invalid[f] = "must be an integer"
+    for f in STICKC_OPTIONAL_FLOAT_FIELDS:
+        if f in payload and not _is_number(payload[f]):
+            invalid[f] = "must be a finite number"
+    if invalid:
+        return None, {"error": "invalid fields", "invalid": invalid}
+
+    record = {"device_id": device_id}
+    for f in (*STICKC_OPTIONAL_STR_FIELDS, *STICKC_OPTIONAL_INT_FIELDS, *STICKC_OPTIONAL_FLOAT_FIELDS):
+        if f in payload:
+            record[f] = payload[f]
+    return record, None
 
 
 # ---------- RTDB layer ----------
@@ -267,7 +324,11 @@ def ingest(request):
     except (ValueError, UnicodeDecodeError):
         return _err(400, "invalid JSON")
 
-    record, error = validate_payload(payload)
+    # Dispatch to the correct validator based on the active device mode
+    if DEVICE_MODE == "stickc":
+        record, error = validate_stickc_payload(payload)
+    else:
+        record, error = validate_payload(payload)
     if error:
         return _resp(400, {"status": "error", **error})
 
@@ -279,8 +340,9 @@ def ingest(request):
     try:
         retry = get_store().write_if_allowed(device_id, record, _now(), min_interval)
     except Exception:  # noqa: BLE001 — never leak internals to the client
-        log.exception("firestore write failed for %s", device_id)
+        log.exception("rtdb write failed for %s", device_id)
         return _err(500, "internal error")
+
 
     if retry is not None:
         return _err(429, "too many requests",
