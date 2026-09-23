@@ -193,7 +193,11 @@ class RTDBStore:
             try:
                 firebase_admin.get_app()
             except ValueError:
-                firebase_admin.initialize_app()
+                db_url = os.environ.get("FIREBASE_DATABASE_URL")
+                if db_url:
+                    firebase_admin.initialize_app(options={"databaseURL": db_url})
+                else:
+                    firebase_admin.initialize_app()
             self._initialized = True
 
     def write_if_allowed(self, device_id: str, record: dict, now: datetime, min_interval: float) -> Optional[float]:
