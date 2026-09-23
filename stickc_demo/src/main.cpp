@@ -123,8 +123,8 @@ void setup() {
   M5.Lcd.setCursor(2, 2);
   M5.Lcd.println("Booting...");
 
-  // Derive device ID from MAC
-  g_deviceId = macToDeviceId();
+  // Use 'socket1' so it matches the cloud allowed list and the frontend .env
+  g_deviceId = "socket1";
 
   // Connect WiFi
   M5.Lcd.println("WiFi...");
