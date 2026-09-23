@@ -12,11 +12,6 @@ import { fmt } from '@/lib/format';
 
 const FACE_STYLE = 'absolute inset-0 border border-white/10 flex items-center justify-center font-mono text-[9px] text-white/30 tracking-widest uppercase select-none';
 
-function mapAccel(g) {
-  // Clamp to ±1g, map to ±45 degrees
-  return Math.max(-45, Math.min(45, g * 45));
-}
-
 function AxisBar({ label, value, color }) {
   const pct = Math.round(Math.max(-100, Math.min(100, value * 100)));
   const barWidth = Math.abs(pct);
@@ -50,8 +45,10 @@ function AxisBar({ label, value, color }) {
 }
 
 export default function IMUVisualizer({ accelX = 0, accelY = 0, accelZ = 1, battery_pct, battery_v, rssi, seq }) {
-  const rotX = mapAccel(accelY);   // tilt forward/back
-  const rotY = mapAccel(-accelX);  // tilt left/right
+  // Calculate proper Euler angles from the gravity vector (in degrees)
+  // This allows full 360-degree rotation matching the physical device
+  const pitch = Math.atan2(-accelY, Math.sqrt(accelX * accelX + accelZ * accelZ)) * (180 / Math.PI);
+  const roll = Math.atan2(accelX, accelZ) * (180 / Math.PI);
 
   const batColor = battery_pct > 60 ? '#4ade80' : battery_pct > 25 ? '#d97736' : '#ef4444';
 
@@ -68,8 +65,8 @@ export default function IMUVisualizer({ accelX = 0, accelY = 0, accelZ = 1, batt
               transformStyle: 'preserve-3d',
             }}
             animate={{
-              rotateX: -rotX,
-              rotateY: rotY,
+              rotateX: pitch,
+              rotateY: roll,
               rotateZ: 0,
             }}
             transition={{ type: 'spring', stiffness: 200, damping: 25 }}
