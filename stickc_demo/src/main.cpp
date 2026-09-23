@@ -27,7 +27,7 @@ static const uint32_t PUSH_INTERVAL_MS = 2000;
 // ── State ─────────────────────────────────────────────────────────────────
 static String   g_deviceId;
 static uint32_t g_seq       = 0;
-static bool     g_cloudOk   = false;
+static int      g_cloudCode = 0;
 static int      g_lastRssi  = 0;
 static float    g_accelX    = 0, g_accelY = 0, g_accelZ = 0;
 static float    g_gyroX     = 0, g_gyroY  = 0, g_gyroZ  = 0;
@@ -59,8 +59,8 @@ void drawScreen() {
 
   // Cloud status
   M5.Display.println("");
-  M5.Display.setTextColor(g_cloudOk ? GREEN : RED);
-  M5.Display.printf("Cloud: %s\n", g_cloudOk ? "OK" : "ERR");
+  M5.Display.setTextColor(g_cloudCode == 200 ? GREEN : RED);
+  M5.Display.printf("Cloud: %s (%d)\n", g_cloudCode == 200 ? "OK" : "ERR", g_cloudCode);
 
   // WiFi RSSI
   M5.Display.setTextColor(WHITE);
@@ -80,8 +80,8 @@ void drawScreen() {
 
 #include <WiFiClientSecure.h>
 
-bool pushToCloud() {
-  if (WiFi.status() != WL_CONNECTED) return false;
+int pushToCloud() {
+  if (WiFi.status() != WL_CONNECTED) return -99;
 
   WiFiClientSecure client;
   // For a quick demo we bypass CA cert validation. 
@@ -118,7 +118,7 @@ bool pushToCloud() {
   int code = http.POST(body);
   http.end();
 
-  return (code == 200);
+  return code;
 }
 
 // ── Setup ─────────────────────────────────────────────────────────────────
@@ -181,7 +181,7 @@ void loop() {
     g_batPct = M5.Power.getBatteryLevel();
 
     // Push to cloud
-    g_cloudOk = pushToCloud();
+    g_cloudCode = pushToCloud();
 
     // Update screen
     drawScreen();
