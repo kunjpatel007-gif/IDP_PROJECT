@@ -13,7 +13,7 @@
  * Requires: include/secrets.h  (copy from secrets.example.h)
  */
 
-#include <M5StickCPlus2.h>
+#include <M5Unified.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
@@ -21,11 +21,11 @@
 
 // ── Config ────────────────────────────────────────────────────────────────
 static const char* DEVICE_NAME = "StickC Demo";
-static const char* FW_VERSION  = "1.0.0-stickc";
+static const char* FW_VERSION  = "1.0.0-m5uni";
 static const uint32_t PUSH_INTERVAL_MS = 2000;
 
 // ── State ─────────────────────────────────────────────────────────────────
-static String  g_deviceId;
+static String   g_deviceId;
 static uint32_t g_seq       = 0;
 static bool     g_cloudOk   = false;
 static int      g_lastRssi  = 0;
@@ -47,35 +47,35 @@ String macToDeviceId() {
 }
 
 void drawScreen() {
-  M5.Lcd.fillScreen(BLACK);
-  M5.Lcd.setTextSize(1);
-  M5.Lcd.setCursor(2, 2);
+  M5.Display.fillScreen(BLACK);
+  M5.Display.setTextSize(1);
+  M5.Display.setCursor(2, 2);
 
   // Header
-  M5.Lcd.setTextColor(ORANGE);
-  M5.Lcd.println("SmartAdapter Demo");
-  M5.Lcd.setTextColor(WHITE);
-  M5.Lcd.println(g_deviceId);
+  M5.Display.setTextColor(ORANGE);
+  M5.Display.println("SmartAdapter Demo");
+  M5.Display.setTextColor(WHITE);
+  M5.Display.println(g_deviceId);
 
   // Cloud status
-  M5.Lcd.println("");
-  M5.Lcd.setTextColor(g_cloudOk ? GREEN : RED);
-  M5.Lcd.printf("Cloud: %s\n", g_cloudOk ? "OK" : "ERR");
+  M5.Display.println("");
+  M5.Display.setTextColor(g_cloudOk ? GREEN : RED);
+  M5.Display.printf("Cloud: %s\n", g_cloudOk ? "OK" : "ERR");
 
   // WiFi RSSI
-  M5.Lcd.setTextColor(WHITE);
-  M5.Lcd.printf("WiFi:  %d dBm\n", g_lastRssi);
-  M5.Lcd.printf("Bat:   %d%%  %.2fV\n", g_batPct, g_batV);
-  M5.Lcd.printf("Seq:   %lu\n", (unsigned long)g_seq);
+  M5.Display.setTextColor(WHITE);
+  M5.Display.printf("WiFi:  %d dBm\n", g_lastRssi);
+  M5.Display.printf("Bat:   %d%%  %.2fV\n", g_batPct, g_batV);
+  M5.Display.printf("Seq:   %lu\n", (unsigned long)g_seq);
 
   // IMU
-  M5.Lcd.println("");
-  M5.Lcd.setTextColor(CYAN);
-  M5.Lcd.println("Accel (g):");
-  M5.Lcd.setTextColor(WHITE);
-  M5.Lcd.printf(" X: %+.3f\n", g_accelX);
-  M5.Lcd.printf(" Y: %+.3f\n", g_accelY);
-  M5.Lcd.printf(" Z: %+.3f\n", g_accelZ);
+  M5.Display.println("");
+  M5.Display.setTextColor(CYAN);
+  M5.Display.println("Accel (g):");
+  M5.Display.setTextColor(WHITE);
+  M5.Display.printf(" X: %+.3f\n", g_accelX);
+  M5.Display.printf(" Y: %+.3f\n", g_accelY);
+  M5.Display.printf(" Z: %+.3f\n", g_accelZ);
 }
 
 bool pushToCloud() {
@@ -116,31 +116,32 @@ bool pushToCloud() {
 
 // ── Setup ─────────────────────────────────────────────────────────────────
 void setup() {
-  M5.begin();
-  M5.Lcd.setRotation(3);
-  M5.Lcd.fillScreen(BLACK);
-  M5.Lcd.setTextColor(ORANGE);
-  M5.Lcd.setCursor(2, 2);
-  M5.Lcd.println("Booting...");
+  auto cfg = M5.config();
+  M5.begin(cfg);
+  M5.Display.setRotation(3);
+  M5.Display.fillScreen(BLACK);
+  M5.Display.setTextColor(ORANGE);
+  M5.Display.setCursor(2, 2);
+  M5.Display.println("Booting...");
 
   // Use 'socket1' so it matches the cloud allowed list and the frontend .env
   g_deviceId = "socket1";
 
   // Connect WiFi
-  M5.Lcd.println("WiFi...");
+  M5.Display.println("WiFi...");
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   uint32_t wifiStart = millis();
   while (WiFi.status() != WL_CONNECTED && millis() - wifiStart < 15000) {
     delay(300);
-    M5.Lcd.print(".");
+    M5.Display.print(".");
   }
 
   if (WiFi.status() == WL_CONNECTED) {
-    M5.Lcd.setTextColor(GREEN);
-    M5.Lcd.println("\nWiFi OK");
+    M5.Display.setTextColor(GREEN);
+    M5.Display.println("\nWiFi OK");
   } else {
-    M5.Lcd.setTextColor(RED);
-    M5.Lcd.println("\nWiFi FAIL");
+    M5.Display.setTextColor(RED);
+    M5.Display.println("\nWiFi FAIL");
   }
 
   delay(800);
@@ -159,11 +160,16 @@ void loop() {
     g_uptimeS = now / 1000;
     g_lastRssi = WiFi.RSSI();
 
-    // Read IMU
-    M5.Imu.getAccelData(&g_accelX, &g_accelY, &g_accelZ);
-    M5.Imu.getGyroData(&g_gyroX, &g_gyroY, &g_gyroZ);
+    // Read IMU via M5Unified API
+    auto imu = M5.Imu.getImuData();
+    g_accelX = imu.accel.x;
+    g_accelY = imu.accel.y;
+    g_accelZ = imu.accel.z;
+    g_gyroX = imu.gyro.x;
+    g_gyroY = imu.gyro.y;
+    g_gyroZ = imu.gyro.z;
 
-    // Read battery
+    // Read battery via M5Unified API (returns mV)
     g_batV   = M5.Power.getBatteryVoltage() / 1000.0f;
     g_batPct = M5.Power.getBatteryLevel();
 
@@ -174,3 +180,4 @@ void loop() {
     drawScreen();
   }
 }
+
