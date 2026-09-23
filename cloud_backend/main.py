@@ -213,7 +213,7 @@ class RTDBStore:
             if retry is not None:
                 return retry
         
-        ref.update({**record, "last_seen": db.ServerValue.TIMESTAMP})
+        ref.update({**record, "last_seen": {".sv": "timestamp"}})
         return None
 
 _store = None
