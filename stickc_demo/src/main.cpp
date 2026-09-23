@@ -157,34 +157,41 @@ void setup() {
 // ── Loop ──────────────────────────────────────────────────────────────────
 void loop() {
   static uint32_t lastPush = 0;
+  static uint32_t lastDraw = 0;
   M5.update();
 
   uint32_t now = millis();
 
+  // 1. Smooth local updates (10 FPS)
+  if (now - lastDraw >= 100) {
+    lastDraw = now;
+    
+    // Read IMU via M5Unified API
+    auto imu = M5.Imu.getImuData();
+    g_accelX = imu.accel.x;
+    g_accelY = imu.accel.y;
+    g_accelZ = imu.accel.z;
+    g_gyroX  = imu.gyro.x;
+    g_gyroY  = imu.gyro.y;
+    g_gyroZ  = imu.gyro.z;
+
+    // Read battery
+    g_batV   = M5.Power.getBatteryVoltage() / 1000.0f;
+    g_batPct = M5.Power.getBatteryLevel();
+
+    // Redraw screen
+    drawScreen();
+  }
+
+  // 2. Slow cloud pushes (every 2s)
   if (now - lastPush >= PUSH_INTERVAL_MS) {
     lastPush = now;
     g_seq++;
     g_uptimeS = now / 1000;
     g_lastRssi = WiFi.RSSI();
 
-    // Read IMU via M5Unified API
-    auto imu = M5.Imu.getImuData();
-    g_accelX = imu.accel.x;
-    g_accelY = imu.accel.y;
-    g_accelZ = imu.accel.z;
-    g_gyroX = imu.gyro.x;
-    g_gyroY = imu.gyro.y;
-    g_gyroZ = imu.gyro.z;
-
-    // Read battery via M5Unified API (returns mV)
-    g_batV   = M5.Power.getBatteryVoltage() / 1000.0f;
-    g_batPct = M5.Power.getBatteryLevel();
-
     // Push to cloud
     g_cloudCode = pushToCloud();
-
-    // Update screen
-    drawScreen();
   }
 }
 
