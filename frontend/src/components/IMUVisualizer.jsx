@@ -10,7 +10,7 @@ import { fmt } from '@/lib/format';
  * We clamp to ±1g and map to ±45° rotation for a readable range.
  */
 
-const FACE_STYLE = 'absolute inset-0 border border-white/10 flex items-center justify-center font-mono text-[9px] text-white/30 tracking-widest uppercase select-none';
+const FACE_STYLE = 'absolute inset-0 flex items-center justify-center font-mono text-[10px] tracking-widest uppercase select-none backdrop-blur-sm';
 
 function AxisBar({ label, value, color }) {
   const pct = Math.round(Math.max(-100, Math.min(100, value * 100)));
@@ -71,29 +71,29 @@ export default function IMUVisualizer({ accelX = 0, accelY = 0, accelZ = 1, batt
             }}
             transition={{ type: 'spring', stiffness: 200, damping: 25 }}
           >
-            {/* Front */}
-            <div className={FACE_STYLE} style={{ transform: 'translateZ(40px)', backgroundColor: 'rgba(217,119,54,0.12)' }}>
-              FRONT
+            {/* Front — orange (device screen side) */}
+            <div className={FACE_STYLE} style={{ transform: 'translateZ(40px)', backgroundColor: 'rgba(217,119,54,0.25)', borderWidth: 1, borderColor: 'rgba(217,119,54,0.5)' }}>
+              <span style={{ color: '#d97736' }}>M5</span>
             </div>
             {/* Back */}
-            <div className={FACE_STYLE} style={{ transform: 'translateZ(-40px) rotateY(180deg)', backgroundColor: 'rgba(217,119,54,0.06)' }}>
-              BACK
+            <div className={FACE_STYLE} style={{ transform: 'translateZ(-40px) rotateY(180deg)', backgroundColor: 'rgba(217,119,54,0.10)', borderWidth: 1, borderColor: 'rgba(217,119,54,0.25)' }}>
+              <span style={{ color: 'rgba(217,119,54,0.5)' }}>USB</span>
             </div>
-            {/* Left */}
-            <div className={FACE_STYLE} style={{ transform: 'translateX(-40px) rotateY(-90deg)', backgroundColor: 'rgba(100,150,255,0.08)' }}>
-              L
+            {/* Left — blue (X axis) */}
+            <div className={FACE_STYLE} style={{ transform: 'translateX(-40px) rotateY(-90deg)', backgroundColor: 'rgba(96,165,250,0.18)', borderWidth: 1, borderColor: 'rgba(96,165,250,0.4)' }}>
+              <span style={{ color: 'rgba(96,165,250,0.6)' }}>−X</span>
             </div>
-            {/* Right */}
-            <div className={FACE_STYLE} style={{ transform: 'translateX(40px) rotateY(90deg)', backgroundColor: 'rgba(100,150,255,0.08)' }}>
-              R
+            {/* Right — blue (X axis) */}
+            <div className={FACE_STYLE} style={{ transform: 'translateX(40px) rotateY(90deg)', backgroundColor: 'rgba(96,165,250,0.18)', borderWidth: 1, borderColor: 'rgba(96,165,250,0.4)' }}>
+              <span style={{ color: 'rgba(96,165,250,0.6)' }}>+X</span>
             </div>
-            {/* Top */}
-            <div className={FACE_STYLE} style={{ transform: 'translateY(-40px) rotateX(90deg)', backgroundColor: 'rgba(74,222,128,0.08)' }}>
-              TOP
+            {/* Top — green (Z axis) */}
+            <div className={FACE_STYLE} style={{ transform: 'translateY(-40px) rotateX(90deg)', backgroundColor: 'rgba(74,222,128,0.18)', borderWidth: 1, borderColor: 'rgba(74,222,128,0.4)' }}>
+              <span style={{ color: 'rgba(74,222,128,0.7)' }}>+Z</span>
             </div>
-            {/* Bottom */}
-            <div className={FACE_STYLE} style={{ transform: 'translateY(40px) rotateX(-90deg)', backgroundColor: 'rgba(74,222,128,0.05)' }}>
-              BTM
+            {/* Bottom — green (Z axis) */}
+            <div className={FACE_STYLE} style={{ transform: 'translateY(40px) rotateX(-90deg)', backgroundColor: 'rgba(74,222,128,0.10)', borderWidth: 1, borderColor: 'rgba(74,222,128,0.25)' }}>
+              <span style={{ color: 'rgba(74,222,128,0.5)' }}>−Z</span>
             </div>
           </motion.div>
         </div>
