@@ -166,13 +166,6 @@ export function useDevice(source = 'live') {
       freeHeap: raw?.free_heap ?? null,
       seq: raw?.seq ?? null,
 
-      // StickC IMU demo fields (null when ESP32 is the source)
-      accel_x: raw?.accel_x ?? null,
-      accel_y: raw?.accel_y ?? null,
-      accel_z: raw?.accel_z ?? null,
-      battery_pct: raw?.battery_pct ?? null,
-      battery_v: raw?.battery_v ?? null,
-
       lastSeenMs,
       silentFor,
       isStale,

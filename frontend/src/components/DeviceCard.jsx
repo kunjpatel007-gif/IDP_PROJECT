@@ -3,7 +3,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import ACScope from '@/components/ACScope';
 import ControlButton from '@/components/ControlButton';
 import HoverPanel from '@/components/HoverPanel';
-import IMUVisualizer from '@/components/IMUVisualizer';
 import PhasorDiagram from '@/components/PhasorDiagram';
 import PowerFlowRibbon from '@/components/PowerFlowRibbon';
 import PowerMeter from '@/components/PowerMeter';
@@ -288,106 +287,85 @@ export default function DeviceCard({
             </span>
           </motion.div>
 
-          {/* ── Focal readout — IMU demo or power meter ───────────── */}
-          {device.accel_x != null ? (
-            /* StickC demo mode: show the IMU visualizer */
-            <motion.div variants={strip}>
-              <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.05em] text-on-surface-subtle">
-                Live IMU · M5StickC Plus 2
+          {/* ── Focal readout — power meter ───────────── */}
+          <motion.div variants={strip}>
+            <span
+              className={`mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.05em] ${
+                tripped ? 'text-accent-red/90' : 'text-on-surface-subtle'
+              }`}
+            >
+              {tripped ? 'Peak trip load' : 'Current power'}
+            </span>
+            <PowerMeter
+              valueClassName="readout readout-hero font-mono"
+              value={offline ? 0 : displayPower}
+              unit="W"
+              tone={powerTone}
+              countUpOnMount
+              bootDelay={reduced ? 0 : 560}
+              ariaLabel={
+                tripped
+                  ? `Peak trip load ${fmt(displayPower)} watts`
+                  : `Current power ${fmt(power)} watts`
+              }
+            />
+          </motion.div>
+
+          {/* ── Rail metrics ─────────────────────────────────────── */}
+          <motion.div variants={strip} className="grid grid-cols-2 gap-3">
+            <MetricWell
+              label="Voltage"
+              value={voltage == null ? DASH : fmt(voltage, 1)}
+              unit="V"
+              history={voltageHistory}
+              colour="#9da2af"
+              tone={unreachable ? 'text-on-surface-subtle' : 'text-on-surface'}
+              dimmed={unreachable}
+            />
+            <MetricWell
+              label="Current"
+              value={current == null ? DASH : fmt(current, 2)}
+              unit="A"
+              history={currentHistory}
+              scaleMax={voltage > 0 && threshold > 0 ? threshold / voltage : null}
+              tooltip
+              unitLabel="A"
+              colour={tripped ? '#ef4444' : '#d97736'}
+              tone={currentTone}
+              dimmed={unreachable}
+            />
+          </motion.div>
+
+          {/* ── Energy flow through the relay ────────────────────── */}
+          <motion.div variants={strip}>
+            <PowerFlowRibbon
+              current={current ?? 0}
+              relayOn={relayOn}
+              tripped={tripped}
+              energised={!unreachable}
+            />
+          </motion.div>
+
+          {/* ── Utilisation oscillograph ─────────────────────────── */}
+          <motion.div variants={strip}>
+            <div className="mb-2 flex items-baseline justify-between font-mono text-[12px]">
+              <span className={utilTone}>
+                {offline ? '0' : fmt(displayPower)} W of {fmt(threshold)} W limit
+                {staleTripped ? (
+                  <span className="ml-2 text-on-surface-subtle">last recorded</span>
+                ) : null}
               </span>
-              <IMUVisualizer
-                accelX={device.accel_x}
-                accelY={device.accel_y}
-                accelZ={device.accel_z}
-                battery_pct={device.battery_pct}
-                battery_v={device.battery_v}
-                rssi={device.rssi}
-                seq={device.seq}
-              />
-            </motion.div>
-          ) : (
-            /* ESP32 power adapter mode: standard power meter + metrics */
-            <>
-              <motion.div variants={strip}>
-                <span
-                  className={`mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.05em] ${
-                    tripped ? 'text-accent-red/90' : 'text-on-surface-subtle'
-                  }`}
-                >
-                  {tripped ? 'Peak trip load' : 'Current power'}
-                </span>
-                <PowerMeter
-                  valueClassName="readout readout-hero font-mono"
-                  value={offline ? 0 : displayPower}
-                  unit="W"
-                  tone={powerTone}
-                  countUpOnMount
-                  bootDelay={reduced ? 0 : 560}
-                  ariaLabel={
-                    tripped
-                      ? `Peak trip load ${fmt(displayPower)} watts`
-                      : `Current power ${fmt(power)} watts`
-                  }
-                />
-              </motion.div>
-
-              {/* ── Rail metrics ─────────────────────────────────────── */}
-              <motion.div variants={strip} className="grid grid-cols-2 gap-3">
-                <MetricWell
-                  label="Voltage"
-                  value={voltage == null ? DASH : fmt(voltage, 1)}
-                  unit="V"
-                  history={voltageHistory}
-                  colour="#9da2af"
-                  tone={unreachable ? 'text-on-surface-subtle' : 'text-on-surface'}
-                  dimmed={unreachable}
-                />
-                <MetricWell
-                  label="Current"
-                  value={current == null ? DASH : fmt(current, 2)}
-                  unit="A"
-                  history={currentHistory}
-                  scaleMax={voltage > 0 && threshold > 0 ? threshold / voltage : null}
-                  tooltip
-                  unitLabel="A"
-                  colour={tripped ? '#ef4444' : '#d97736'}
-                  tone={currentTone}
-                  dimmed={unreachable}
-                />
-              </motion.div>
-
-              {/* ── Energy flow through the relay ────────────────────── */}
-              <motion.div variants={strip}>
-                <PowerFlowRibbon
-                  current={current ?? 0}
-                  relayOn={relayOn}
-                  tripped={tripped}
-                  energised={!unreachable}
-                />
-              </motion.div>
-
-              {/* ── Utilisation oscillograph ─────────────────────────── */}
-              <motion.div variants={strip}>
-                <div className="mb-2 flex items-baseline justify-between font-mono text-[12px]">
-                  <span className={utilTone}>
-                    {offline ? '0' : fmt(displayPower)} W of {fmt(threshold)} W limit
-                    {staleTripped ? (
-                      <span className="ml-2 text-on-surface-subtle">last recorded</span>
-                    ) : null}
-                  </span>
-                  <span className={`font-medium ${utilTone}`}>
-                    {offline ? '0%' : overloaded ? `Overload · ${utilPct}%` : `${utilPct}%`}
-                  </span>
-                </div>
-                <WaveformBar
-                  pct={unreachable ? 0 : utilisationClamped === 100 ? utilisation : utilisationClamped}
-                  overloaded={(overloaded || tripped) && !unreachable}
-                  offline={unreachable}
-                  height={30}
-                />
-              </motion.div>
-            </>
-          )}
+              <span className={`font-medium ${utilTone}`}>
+                {offline ? '0%' : overloaded ? `Overload · ${utilPct}%` : `${utilPct}%`}
+              </span>
+            </div>
+            <WaveformBar
+              pct={unreachable ? 0 : utilisationClamped === 100 ? utilisation : utilisationClamped}
+              overloaded={(overloaded || tripped) && !unreachable}
+              offline={unreachable}
+              height={30}
+            />
+          </motion.div>
 
 
           {/* ── Actuator deck ────────────────────────────────────── */}
