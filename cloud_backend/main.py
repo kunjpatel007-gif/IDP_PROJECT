@@ -21,8 +21,6 @@ COMMAND_COLLECTION = "commands"
 VALID_COMMANDS = {"ON", "OFF", "RESET"}
 COMMAND_TTL_S = 30  # discard commands older than 30 s
 
-# Toggle: set env var DEVICE_MODE=stickc on Cloud Function to accept StickC payloads.
-# Defaults to "esp32" so the production adapter is never affected.
 
 # ── Schema: ESP32 power adapter (production) ──────────────────────────────
 ESP32_NULLABLE_SENSOR_FIELDS = ("voltage", "current", "power", "energy", "frequency", "power_factor")
