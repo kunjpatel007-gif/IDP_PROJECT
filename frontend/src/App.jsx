@@ -20,6 +20,7 @@ import TabView, { Strip } from '@/components/TabView';
 import TargetCursor from '@/components/TargetCursor';
 import ACScope from '@/components/ACScope';
 import PhasorDiagram from '@/components/PhasorDiagram';
+import PredictivePanel from '@/components/PredictivePanel';
 import TripCurve from '@/components/TripCurve';
 import TripOverlay from '@/components/TripOverlay';
 import WaveformBar from '@/components/WaveformBar';
@@ -158,7 +159,15 @@ export default function App() {
     [push, source]
   );
 
-  const alertCount = device.tripped ? 1 : 0;
+  const handleConfigUpdate = useCallback((newConfig) => {
+    push({
+      tone: 'ok',
+      title: 'Adaptive Parameters Saved',
+      detail: `k=${newConfig.k_factor}σ, Margin=${newConfig.margin_m}W, Hard Ceiling=${newConfig.hard_limit}W`,
+    });
+  }, [push]);
+
+  const alertCount = (device.tripped ? 1 : 0) + (device.degradationAlert ? 1 : 0);
   const radio = rssiQuality(device.rssi);
 
   /* Backdrop intensity is the socket's own utilisation, not a decoration
@@ -232,7 +241,10 @@ export default function App() {
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {[
-                    { id: 'trip', label: 'Trip', href: '/?mock=trip' },
+                    { id: 'predictive', label: 'Adaptive', href: '/?mock=predictive' },
+                    { id: 'degradation', label: 'Degradation', href: '/?mock=degradation' },
+                    { id: 'predictivetrip', label: 'Pred-Trip', href: '/?mock=predictivetrip' },
+                    { id: 'trip', label: 'Hard-Trip', href: '/?mock=trip' },
                     { id: 'cycling', label: 'Cycling', href: '/?mock=cycling' },
                     { id: 'offline', label: 'Offline', href: '/?mock=offline' },
                   ].map((m) => (
@@ -386,6 +398,23 @@ export default function App() {
                     </Strip>
                   </ScrollStackItem>
                 </ScrollStack>
+              </TabView>
+            ) : null}
+
+            {/* ── Predictive & Adaptive Protection ────────────────── */}
+            {activeTab === 'predictive' ? (
+              <TabView key="predictive">
+                <Strip>
+                  <PageHeader
+                    title="Predictive Protection"
+                    lede="Adaptive electrical fingerprinting, dynamic threshold intervention (T = P_normal + kσ + M), and cross-session degradation tracking."
+                    meta={headerMeta}
+                  />
+                </Strip>
+
+                <Strip>
+                  <PredictivePanel device={device} onUpdateConfig={handleConfigUpdate} />
+                </Strip>
               </TabView>
             ) : null}
 

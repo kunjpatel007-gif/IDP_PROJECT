@@ -2,17 +2,21 @@ import { memo } from 'react';
 import { motion } from 'framer-motion';
 import LinkTrace from '@/components/LinkTrace';
 import StatusOrb from '@/components/StatusOrb';
-import { IconBell, IconChip, IconGrid, IconSliders, LogoMark } from '@/components/Icons';
+import { IconBell, IconChip, IconGrid, IconShield, IconSliders, LogoMark } from '@/components/Icons';
 
 const NAV = [
   { id: 'overview', label: 'Live Overview', Icon: IconGrid },
+  { id: 'predictive', label: 'Predictive Protection', Icon: IconShield, badge: true },
   { id: 'historical', label: 'Historical & Analytics', Icon: IconChip },
   { id: 'protection', label: 'Protection & Alerts', Icon: IconBell, badge: true },
   { id: 'network', label: 'Network & Device', Icon: IconSliders },
 ];
 
 const MOCK_LINKS = [
-  { id: 'trip', label: 'Trip', href: '/?mock=trip' },
+  { id: 'predictive', label: 'Adaptive Load', href: '/?mock=predictive' },
+  { id: 'degradation', label: 'Degradation', href: '/?mock=degradation' },
+  { id: 'predictivetrip', label: 'Predictive Trip', href: '/?mock=predictivetrip' },
+  { id: 'trip', label: 'Hard Trip', href: '/?mock=trip' },
   { id: 'cycling', label: 'Cycling', href: '/?mock=cycling' },
   { id: 'offline', label: 'Offline', href: '/?mock=offline' },
 ];

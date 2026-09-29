@@ -27,8 +27,10 @@ ESP32_NULLABLE_SENSOR_FIELDS = ("voltage", "current", "power", "energy", "freque
 ESP32_REQUIRED_NUMBER_FIELDS = ("threshold",)
 ESP32_REQUIRED_BOOL_FIELDS   = ("tripped", "relay_on")
 ESP32_REQUIRED_FIELDS        = ("device_id",) + ESP32_NULLABLE_SENSOR_FIELDS + ESP32_REQUIRED_NUMBER_FIELDS + ESP32_REQUIRED_BOOL_FIELDS
-ESP32_OPTIONAL_STR_FIELDS    = {"device_name": 64, "fw_version": 32}
+ESP32_OPTIONAL_STR_FIELDS    = {"device_name": 64, "fw_version": 32, "active_appliance": 64}
 ESP32_OPTIONAL_INT_FIELDS    = ("rssi", "uptime_s", "seq", "free_heap")
+ESP32_OPTIONAL_NUMBER_FIELDS = ("dynamic_threshold", "risk_level", "degradation_pct", "inrush_power", "inrush_current", "startup_duration_s", "p_normal", "sigma")
+ESP32_OPTIONAL_BOOL_FIELDS   = ("degradation_alert",)
 
 # Keep old names as aliases so test fixtures don't need changing
 NULLABLE_SENSOR_FIELDS = ESP32_NULLABLE_SENSOR_FIELDS
@@ -37,6 +39,8 @@ REQUIRED_BOOL_FIELDS   = ESP32_REQUIRED_BOOL_FIELDS
 REQUIRED_FIELDS        = ESP32_REQUIRED_FIELDS
 OPTIONAL_STR_FIELDS    = ESP32_OPTIONAL_STR_FIELDS
 OPTIONAL_INT_FIELDS    = ESP32_OPTIONAL_INT_FIELDS
+OPTIONAL_NUMBER_FIELDS = ESP32_OPTIONAL_NUMBER_FIELDS
+OPTIONAL_BOOL_FIELDS   = ESP32_OPTIONAL_BOOL_FIELDS
 
 log = logging.getLogger("ingest")
 
@@ -114,11 +118,17 @@ def validate_payload(payload: Any) -> tuple[Optional[dict], Optional[dict]]:
     for f in OPTIONAL_INT_FIELDS:
         if f in payload and (not isinstance(payload[f], int) or isinstance(payload[f], bool)):
             invalid[f] = "must be an integer"
+    for f in OPTIONAL_NUMBER_FIELDS:
+        if f in payload and (payload[f] is not None and not _is_number(payload[f])):
+            invalid[f] = "must be a finite number or null"
+    for f in OPTIONAL_BOOL_FIELDS:
+        if f in payload and not isinstance(payload[f], bool):
+            invalid[f] = "must be a boolean"
     if invalid:
         return None, {"error": "invalid fields", "invalid": invalid}
 
     record = {f: payload[f] for f in REQUIRED_FIELDS}
-    for f in (*OPTIONAL_STR_FIELDS, *OPTIONAL_INT_FIELDS):
+    for f in (*OPTIONAL_STR_FIELDS, *OPTIONAL_INT_FIELDS, *OPTIONAL_NUMBER_FIELDS, *OPTIONAL_BOOL_FIELDS):
         if f in payload:
             record[f] = payload[f]
     return record, None
@@ -168,7 +178,9 @@ class RTDBStore:
             if retry is not None:
                 return retry
         
-        ref.update({**record, "last_seen": {".sv": "timestamp"}})
+        ts = getattr(db, "ServerValue", None)
+        timestamp_val = ts.TIMESTAMP if ts and hasattr(ts, "TIMESTAMP") else {".sv": "timestamp"}
+        ref.update({**record, "last_seen": timestamp_val})
         return None
 
 _store = None

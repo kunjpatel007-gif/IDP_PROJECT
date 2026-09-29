@@ -166,6 +166,18 @@ export function useDevice(source = 'live') {
       freeHeap: raw?.free_heap ?? null,
       seq: raw?.seq ?? null,
 
+      // Predictive Adaptive Protection fields (idp_predictive_idea_add_on)
+      activeAppliance: raw?.active_appliance ?? null,
+      dynamicThreshold: raw?.dynamic_threshold != null ? Number(raw.dynamic_threshold) : null,
+      riskLevel: raw?.risk_level != null ? Math.min(100, Math.max(0, Number(raw.risk_level))) : null,
+      degradationPct: raw?.degradation_pct != null ? Number(raw.degradation_pct) : null,
+      degradationAlert: raw?.degradation_alert === true,
+      inrushPower: raw?.inrush_power != null ? Number(raw.inrush_power) : null,
+      inrushCurrent: raw?.inrush_current != null ? Number(raw.inrush_current) : null,
+      startupDurationS: raw?.startup_duration_s != null ? Number(raw.startup_duration_s) : null,
+      pNormal: raw?.p_normal != null ? Number(raw.p_normal) : null,
+      sigma: raw?.sigma != null ? Number(raw.sigma) : null,
+
       lastSeenMs,
       silentFor,
       isStale,
