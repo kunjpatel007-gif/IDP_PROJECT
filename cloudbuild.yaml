@@ -1,0 +1,16 @@
+steps:
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    args:
+      - gcloud
+      - functions
+      - deploy
+      - ingest
+      - --runtime=python312
+      - --trigger-http
+      - --allow-unauthenticated
+      - --source=./cloud_backend
+      - --region=us-central1
+      - --update-env-vars=FIREBASE_DATABASE_URL=https://smart-adapter-backend-default-rtdb.firebaseio.com
+    id: 'Deploy-Cloud-Function'
+options:
+  logging: CLOUD_LOGGING_ONLY
