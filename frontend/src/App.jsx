@@ -412,9 +412,9 @@ export default function App() {
                   />
                 </Strip>
 
-                <Strip>
+                <ScrollStack>
                   <PredictivePanel device={device} onUpdateConfig={handleConfigUpdate} />
-                </Strip>
+                </ScrollStack>
               </TabView>
             ) : null}
 
